@@ -1,0 +1,60 @@
+plugins {
+	id 'java'
+	id 'application'
+}
+
+sourceCompatibility = 1.11
+targetCompatibility = 1.11
+
+def mainClassFQN = 'com.h119.readit.ReadIt'
+def projectName = 'readit'
+
+repositories {
+	jcenter()
+}
+
+dependencies {
+	// GUI style
+	implementation 'com.formdev:flatlaf:0.39'
+	
+	// PDF splitting and conversion to image
+	implementation 'org.apache.pdfbox:jbig2-imageio:3.0.3'
+	implementation 'org.apache.pdfbox:pdfbox-tools:2.0.22'
+	implementation 'org.apache.pdfbox:pdfbox:2.0.22'
+
+	// OCR
+    implementation 'org.bytedeco:tesseract-platform:4.1.1-1.5.4'
+
+	// Word file generation
+	implementation 'org.docx4j:docx4j:3.3.5'
+	implementation 'javax.xml.bind:jaxb-api:2.1'
+	implementation 'com.sun.xml.bind:jaxb-impl:2.1.2'
+}
+
+application {
+	mainClass.set(mainClassFQN)
+}
+
+task fatJar(type: Jar) {
+	manifest {
+		attributes 'Main-Class': mainClassFQN
+		attributes 'Description': projectName
+	}
+	archiveBaseName = projectName
+	duplicatesStrategy = DuplicatesStrategy.INCLUDE
+	from {
+		configurations.runtimeClasspath
+		.collect {
+			it.isDirectory() ? it : zipTree(it)
+		}
+	}
+	with jar
+
+	exclude(
+		'META-INF/*.DSA',
+		'META-INF/*.SF',
+		'META-INF/*.RSA'
+	)
+	with jar
+}
+
