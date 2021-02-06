@@ -184,7 +184,7 @@ public class Transcript {
 						BytePointer outText;
 
 						TessBaseAPI api = new TessBaseAPI();
-						if (api.Init("data", language) != 0) {
+						if (api.Init("tessdata", language) != 0) {
 							throw new RuntimeException("Could not initialize tesseract.");
 						}
 
@@ -273,7 +273,7 @@ public class Transcript {
 	private static Object[] getTrainedLanguages() {
 		try {
 			return
-				Files.list(Paths.get("data"))
+				Files.list(Paths.get("tessdata"))
 					.filter(file -> !Files.isDirectory(file))
 					.map(Path::getFileName)
 					.map(Path::toString)

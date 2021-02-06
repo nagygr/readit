@@ -41,15 +41,15 @@ tested.
 
 There's one extra step that is needed: Tesseract needs training data. This is
 language-dependent information for the learning algorithm. The application needs
-the `<language code>.traineddata` files in the `data` directory. They can be
+the `<language code>.traineddata` files in the `tessdata` directory. They can be
 retrieved from
 [github.com/tesseract-ocr/tessdata](https://github.com/tesseract-ocr/tessdata).
 
 The following steps are needed:
 
-1.	create a directory called `data`
+1.	create a directory called `tessdata`
 2.	clone the repository above or download its contents and place the
-	`traineddata` files for the required languages in `data`
+	`traineddata` files for the required languages in `tessdata`
 
 ## Usage
 
