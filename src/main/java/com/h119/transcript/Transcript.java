@@ -8,9 +8,13 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import javax.imageio.ImageIO;
 import javax.swing.*;
@@ -41,56 +45,28 @@ import org.docx4j.wml.*;
 
 import com.formdev.flatlaf.*;
 
+import com.h119.transcript.util.LanguageCodes;
+import static com.h119.transcript.util.LanguageCodes.Language;
+
 public class Transcript {
-	private static class Language {
-		private String displayName;
-		private String languageCode;
-
-		public Language(String displayName, String languageCode) {
-			this.displayName = displayName;
-			this.languageCode = languageCode;
-		}
-
-		public String getDisplayName() {
-			return displayName;
-		}
-
-		public String getLanguageCode() {
-			return languageCode;
-		}
-
-		@Override
-		public String toString() {
-			return displayName;
-		}
-	}
-
 	private JFrame frame;
-	private JComboBox<Language> languageBox;
+	private JComboBox<Object> languageBox;
 	private JButton openImageButton;
 	private JLabel imagePathLabel;
 	private JTextArea textArea;
 
 	private static final int MARGIN = 10;
-	private static final Language[] languages;
 	private static final FlatLightLaf lightTheme;
 
 	static {
-		languages = new Language[] {
-			new Language("Hungarian", "hun"),
-			new Language("English", "eng"),
-			new Language("Swedish", "sve"),
-			new Language("Danish", "dan"),
-			new Language("German", "deu"),
-			new Language("Hebrew", "heb")
-		};
-
 		lightTheme = new FlatLightLaf();
 	}
 
 	public Transcript() {
 		var languageLabel = new JLabel("Language:");
-		languageBox = new JComboBox<>(languages);
+		languageBox = new JComboBox<>(
+			getTrainedLanguages()
+		);
 		openImageButton = new JButton("Open PDF file");
 		imagePathLabel = new JLabel("");
 
@@ -163,7 +139,7 @@ public class Transcript {
 
 	private void imageSelectorPressed(ActionEvent e) {
 		try {
-			var language = ((Language)languageBox.getSelectedItem()).getLanguageCode();
+			var language = ((Language)languageBox.getSelectedItem()).getAlpha3();
 			var pdfFile = getFile(frame);
 			String pdfFilePath = pdfFile.getCanonicalPath();
 			String fileNoExtension = pdfFilePath.substring(0, pdfFilePath.lastIndexOf("."));
@@ -292,5 +268,24 @@ public class Transcript {
 		}
 
 		javax.swing.SwingUtilities.invokeLater(() -> {new Transcript();});
+	}
+
+	private static Object[] getTrainedLanguages() {
+		try {
+			return
+				Files.list(Paths.get("data"))
+					.filter(file -> !Files.isDirectory(file))
+					.map(Path::getFileName)
+					.map(Path::toString)
+					.filter(name -> name.endsWith(".traineddata"))
+					.filter(name -> name.indexOf("_") == -1)
+					.map(name -> name.substring(0,3))
+					.map(name -> LanguageCodes.ofAlpha3(name).orElseThrow())
+					.collect(Collectors.toList())
+					.toArray();
+		}
+		catch (Exception e) {
+			throw new RuntimeException(e);
+		}
 	}
 }
