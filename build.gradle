@@ -6,8 +6,8 @@ plugins {
 sourceCompatibility = 1.11
 targetCompatibility = 1.11
 
-def mainClassFQN = 'com.h119.readit.ReadIt'
-def projectName = 'readit'
+def mainClassFQN = 'com.h119.transcript.Transcript'
+def projectName = 'transcript'
 
 repositories {
 	jcenter()

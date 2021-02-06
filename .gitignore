@@ -33,3 +33,6 @@ build/
 # Test artifacts
 test_data/*.png
 test_data/*.docx
+
+# Misc. files
+attic/

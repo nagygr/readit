@@ -1,4 +1,4 @@
-package com.h119.readit;
+package com.h119.transcript;
 
 import java.awt.*;
 import java.awt.event.*;
@@ -41,7 +41,7 @@ import org.docx4j.wml.*;
 
 import com.formdev.flatlaf.*;
 
-public class ReadIt {
+public class Transcript {
 	private static class Language {
 		private String displayName;
 		private String languageCode;
@@ -88,7 +88,7 @@ public class ReadIt {
 		lightTheme = new FlatLightLaf();
 	}
 
-	public ReadIt() {
+	public Transcript() {
 		var languageLabel = new JLabel("Language:");
 		languageBox = new JComboBox<>(languages);
 		openImageButton = new JButton("Open PDF file");
@@ -291,6 +291,6 @@ public class ReadIt {
 			System.out.format("Couldn't set flatlaf: %s\n", flatlafException);
 		}
 
-		javax.swing.SwingUtilities.invokeLater(() -> {new ReadIt();});
+		javax.swing.SwingUtilities.invokeLater(() -> {new Transcript();});
 	}
 }
