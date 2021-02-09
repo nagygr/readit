@@ -34,5 +34,12 @@ build/
 test_data/*.png
 test_data/*.docx
 
+# Source code taggers
+GPATH
+GRTAGS
+GTAGS
+cscope.out
+tags
+
 # Misc. files
 attic/
