@@ -1,12 +1,13 @@
 plugins {
 	id 'java'
 	id 'application'
+	id "org.openjfx.javafxplugin" version "0.0.9"
 }
 
 sourceCompatibility = 1.11
 targetCompatibility = 1.11
 
-def mainClassFQN = 'com.h119.transcript.Transcript'
+def mainClassFQN = 'com.h119.transcript.Starter'
 def projectName = 'transcript'
 
 repositories {
@@ -15,7 +16,7 @@ repositories {
 
 dependencies {
 	// GUI style
-	implementation 'com.formdev:flatlaf:0.39'
+	// implementation 'com.formdev:flatlaf:0.39'
 	
 	// PDF splitting and conversion to image
 	implementation 'org.apache.pdfbox:jbig2-imageio:3.0.3'
@@ -29,6 +30,30 @@ dependencies {
 	implementation 'org.docx4j:docx4j:3.3.5'
 	implementation 'javax.xml.bind:jaxb-api:2.1'
 	implementation 'com.sun.xml.bind:jaxb-impl:2.1.2'
+
+	// JavaFX
+	runtimeOnly "org.openjfx:javafx-base:11:linux"
+	runtimeOnly "org.openjfx:javafx-graphics:11:linux"
+	runtimeOnly "org.openjfx:javafx-controls:11:linux"
+	runtimeOnly "org.openjfx:javafx-fxml:11:linux"
+	runtimeOnly "org.openjfx:javafx-media:11:linux"
+
+	runtimeOnly "org.openjfx:javafx-base:11:win"
+	runtimeOnly "org.openjfx:javafx-graphics:11:win"
+	runtimeOnly "org.openjfx:javafx-controls:11:win"
+	runtimeOnly "org.openjfx:javafx-fxml:11:win"
+	runtimeOnly "org.openjfx:javafx-media:11:win"
+
+	runtimeOnly "org.openjfx:javafx-base:11:mac"
+	runtimeOnly "org.openjfx:javafx-graphics:11:mac"
+	runtimeOnly "org.openjfx:javafx-controls:11:mac"
+	runtimeOnly "org.openjfx:javafx-fxml:11:mac"
+	runtimeOnly "org.openjfx:javafx-media:11:mac"
+}
+
+javafx {
+	modules = [ "javafx.controls", "javafx.graphics", "javafx.fxml" ]
+	version = "15.0.1"
 }
 
 application {
