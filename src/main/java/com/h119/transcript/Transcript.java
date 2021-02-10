@@ -159,113 +159,117 @@ public class Transcript extends Application {
 
 		@Override
 		public Void call() throws InterruptedException {
+			/*
 			for (int i = 0; i < 10; ++i) {
 				Thread.sleep(200);
 				updateProgress(i + 1, 10);
 				updateMessage(String.format("Progressing -- %d%%", (10 * (i + 1))));
 			}
+			*/
+			
+
+			try {
+				var languageCode = documentLanguage.getAlpha3();
+				String pdfFilePath = pdfFile.getCanonicalPath();
+				String fileNoExtension = pdfFilePath.substring(0, pdfFilePath.lastIndexOf("."));
+				var documentText = new StringBuilder();
+				var documentLines = new ArrayList<String>();
+				var imageFiles = new ArrayList<String>();
+
+				PDDocument document = PDDocument.load(pdfFile);
+				PDFRenderer pdfRenderer = new PDFRenderer(document);
+				var documentPages = document.getNumberOfPages();
+
+				updateMessage(String.format("The document consists of %d pages", documentPages));
+				updateMessage("Saving the pages as PNG images...");
+
+				for (int page = 0; page < documentPages; ++page)
+				{ 
+					BufferedImage bim = pdfRenderer.renderImageWithDPI(page, 300, ImageType.RGB);
+
+					// suffix in filename will be used as the file format
+					String imageFileName = fileNoExtension + "-" + (page+1) + ".png";
+
+					updateMessage(String.format("Saving %s...", imageFileName));
+
+					// Below are two alternative ways to geenrate the images
+					//*
+					imageFiles.add(imageFileName);
+					ImageIOUtil.writeImage(bim, imageFileName, 300);
+					// */
+					
+					/*
+					imageFiles.add(imageFileName);
+					File tempFile = new File(imageFileName);
+					ImageIO.write(bim, "png", tempFile);
+					// */
+
+					updateProgress(300 * (page + 1) / documentPages, 1000);
+				}
+				document.close();
+
+				BytePointer outText;
+
+				TessBaseAPI api = new TessBaseAPI();
+				if (api.Init("tessdata", languageCode) != 0) {
+					throw new RuntimeException("Could not initialize tesseract.");
+				}
+
+				updateMessage("Starting OCR...");
+
+				int page = 0;
+				for (var imageFile: imageFiles) {
+					updateMessage(String.format("Performing OCR on %s", imageFile));
+
+					PIX image = pixRead(imageFile);
+					api.SetImage(image);
+
+					outText = api.GetUTF8Text();
+					documentLines.addAll(
+						Arrays.asList(
+							new String(outText.getStringBytes(), StandardCharsets.UTF_8)
+								.split("\n")
+						)
+					);
+
+					outText.deallocate();
+					pixDestroy(image);
+
+					updateProgress(300 + (300 * (page + 1) / documentPages), 1000);
+				}
+
+				api.End();
+
+				updateMessage("Saving the text as a Word document...");
+
+				WordprocessingMLPackage wordPackage = WordprocessingMLPackage.createPackage();
+				MainDocumentPart mainDocumentPart = wordPackage.getMainDocumentPart();
+
+				int currentLine = 0;
+				int lineNumber = documentLines.size();
+
+				for (var line: documentLines) {
+					mainDocumentPart.addParagraphOfText(line);
+					updateProgress(600 + (400 * (currentLine + 1) / lineNumber), 1000);
+				}
+				
+				File exportFile = new File(fileNoExtension + ".docx");
+				wordPackage.save(exportFile);
+
+				updateMessage(String.format("The Word file has been created: %s.docx\n", fileNoExtension));
+			}
+			catch (Exception e) {
+				updateMessage(String.format("Error: %s", e));
+			}
 
 			return null;
 		}
 
-		@Override protected void done() {
+		@Override
+		protected void done() {
 			super.done();
 			updateMessage("Done");
 		}
-
-		//// TODO
-		//try {
-		//	var language = ((Language)languageBox.getSelectedItem()).getAlpha3();
-		//	var pdfFile = getFile(frame);
-		//	String pdfFilePath = pdfFile.getCanonicalPath();
-		//	String fileNoExtension = pdfFilePath.substring(0, pdfFilePath.lastIndexOf("."));
-		//	var documentText = new StringBuilder();
-		//	var documentLines = new ArrayList<String>();
-		//	
-		//	imagePathLabel.setText(truncateLongPath(pdfFile.getCanonicalPath()));
-		//	textArea.setText("Working...\n");
-
-		//	// The OCR process is started on a new thread so that this function can
-		//	// return and the path of the selected file can be displayed immediately.
-		//	// The reason is that OCR can take some time and it looks weird that the
-		//	// path appears with a delay as well.
-		//	Timer timer = new Timer(1,
-		//		(ActionEvent timerEvent) -> {
-		//			try {
-		//				var imageFiles = new ArrayList<String>();
-
-		//				PDDocument document = PDDocument.load(pdfFile);
-		//				PDFRenderer pdfRenderer = new PDFRenderer(document);
-		//				for (int page = 0; page < document.getNumberOfPages(); ++page)
-		//				{ 
-		//					BufferedImage bim = pdfRenderer.renderImageWithDPI(page, 300, ImageType.RGB);
-
-		//					// suffix in filename will be used as the file format
-		//					String imageFileName = fileNoExtension + "-" + (page+1) + ".png";
-
-		//					// Below are two alternative ways to geenrate the images
-		//					//*
-		//					imageFiles.add(imageFileName);
-		//					ImageIOUtil.writeImage(bim, imageFileName, 300);
-		//					// */
-		//					
-		//					/*
-		//					imageFiles.add(imageFileName);
-		//					File tempFile = new File(imageFileName);
-		//					ImageIO.write(bim, "png", tempFile);
-		//					// */
-		//				}
-		//				document.close();
-
-		//				BytePointer outText;
-
-		//				TessBaseAPI api = new TessBaseAPI();
-		//				if (api.Init("tessdata", language) != 0) {
-		//					throw new RuntimeException("Could not initialize tesseract.");
-		//				}
-
-		//				for (var imageFile: imageFiles) {
-		//					PIX image = pixRead(imageFile);
-		//					api.SetImage(image);
-
-		//					outText = api.GetUTF8Text();
-		//					documentLines.addAll(
-		//						Arrays.asList(
-		//							new String(outText.getStringBytes(), StandardCharsets.UTF_8)
-		//								.split("\n")
-		//						)
-		//					);
-
-		//					outText.deallocate();
-		//					pixDestroy(image);
-		//				}
-
-		//				api.End();
-
-		//				WordprocessingMLPackage wordPackage = WordprocessingMLPackage.createPackage();
-		//				MainDocumentPart mainDocumentPart = wordPackage.getMainDocumentPart();
-
-		//				for (var line: documentLines) {
-		//					mainDocumentPart.addParagraphOfText(line);
-		//				}
-		//				
-		//				File exportFile = new File(fileNoExtension + ".docx");
-		//				wordPackage.save(exportFile);
-
-		//				textArea.setText(String.format("The Word file has been created: %s.docx\n", fileNoExtension));
-		//			}
-		//			catch (Exception te) {
-		//				textArea.setText(te.toString());
-		//			}
-		//		}
-		//	);
-		//	timer.setRepeats(false);
-		//	timer.start();
-
-		//}
-		//catch (Exception exception) {
-		//	textArea.setText(exception.toString());
-		//}
 	}
 
 	private File getFile(Stage parent) throws FileNotFoundException {
