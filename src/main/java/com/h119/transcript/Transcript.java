@@ -159,15 +159,6 @@ public class Transcript extends Application {
 
 		@Override
 		public Void call() throws InterruptedException {
-			/*
-			for (int i = 0; i < 10; ++i) {
-				Thread.sleep(200);
-				updateProgress(i + 1, 10);
-				updateMessage(String.format("Progressing -- %d%%", (10 * (i + 1))));
-			}
-			*/
-			
-
 			try {
 				var languageCode = documentLanguage.getAlpha3();
 				String pdfFilePath = pdfFile.getCanonicalPath();
@@ -183,29 +174,24 @@ public class Transcript extends Application {
 				updateMessage(String.format("The document consists of %d pages", documentPages));
 				updateMessage("Saving the pages as PNG images...");
 
-				for (int page = 0; page < documentPages; ++page)
-				{ 
+				for (int page = 0; page < documentPages; ++page) { 
 					BufferedImage bim = pdfRenderer.renderImageWithDPI(page, 300, ImageType.RGB);
 
-					// suffix in filename will be used as the file format
 					String imageFileName = fileNoExtension + "-" + (page+1) + ".png";
 
 					updateMessage(String.format("Saving %s...", imageFileName));
 
-					// Below are two alternative ways to geenrate the images
-					//*
 					imageFiles.add(imageFileName);
 					ImageIOUtil.writeImage(bim, imageFileName, 300);
-					// */
-					
-					/*
-					imageFiles.add(imageFileName);
-					File tempFile = new File(imageFileName);
-					ImageIO.write(bim, "png", tempFile);
-					// */
+
+					if (isCancelled()) {
+						updateMessage("Cancelled");
+						return null;
+					}
 
 					updateProgress(300 * (page + 1) / documentPages, 1000);
 				}
+				
 				document.close();
 
 				BytePointer outText;
@@ -215,6 +201,7 @@ public class Transcript extends Application {
 					throw new RuntimeException("Could not initialize tesseract.");
 				}
 
+				updateMessage("Successfully initialized tesseract");
 				updateMessage("Starting OCR...");
 
 				int page = 0;
@@ -235,6 +222,11 @@ public class Transcript extends Application {
 					outText.deallocate();
 					pixDestroy(image);
 
+					if (isCancelled()) {
+						updateMessage("Cancelled");
+						return null;
+					}
+
 					updateProgress(300 + (300 * (page + 1) / documentPages), 1000);
 				}
 
@@ -250,6 +242,12 @@ public class Transcript extends Application {
 
 				for (var line: documentLines) {
 					mainDocumentPart.addParagraphOfText(line);
+
+					if (isCancelled()) {
+						updateMessage("Cancelled");
+						return null;
+					}
+
 					updateProgress(600 + (400 * (currentLine + 1) / lineNumber), 1000);
 				}
 				
