@@ -127,11 +127,50 @@ public class Transcript extends Application {
 					pdfFile.getCanonicalPath()
 				)
 			);
+
+			final var task = new OcrProcess(pdfFile, documentLanguage);
+
+			progressBar.progressProperty().bind(task.progressProperty());
+
+			task.messageProperty().addListener(
+				(observableValue, oldValue, newValue) -> {
+					textArea.appendText(newValue + "\n");
+				}
+			);
+
+			new Thread(task).start();
 		}
 		catch (Exception exception) {
 			textArea.appendText(
 				String.format("Error: %s\n", exception)
 			);
+		}
+	}
+
+	public static class OcrProcess extends Task<Void> {
+
+		private File pdfFile;
+		private Language documentLanguage;
+
+		public OcrProcess(File pdfFile, Language documentLanguage) {
+			this.pdfFile = pdfFile;
+			this.documentLanguage = documentLanguage;
+		}
+
+		@Override
+		public Void call() throws InterruptedException {
+			for (int i = 0; i < 10; ++i) {
+				Thread.sleep(200);
+				updateProgress(i + 1, 10);
+				updateMessage(String.format("Progressing -- %d%%", (10 * (i + 1))));
+			}
+
+			return null;
+		}
+
+		@Override protected void done() {
+			super.done();
+			updateMessage("Done");
 		}
 
 		//// TODO
