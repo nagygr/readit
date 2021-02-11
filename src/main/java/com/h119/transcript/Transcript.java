@@ -1,7 +1,9 @@
 package com.h119.transcript;
 
-import java.awt.*;
-import java.awt.event.*;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
+import java.awt.Insets;
+import java.awt.event.ActionEvent;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -17,9 +19,19 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import javax.imageio.ImageIO;
-import javax.swing.*;
+import javax.swing.JButton;
+import javax.swing.JComboBox;
+import javax.swing.JFileChooser;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
+import javax.swing.JScrollPane;
+import javax.swing.JTextArea;
+import javax.swing.Timer;
+import javax.swing.UIManager;
+import javax.swing.UnsupportedLookAndFeelException;
 import javax.swing.border.EmptyBorder;
-import javax.swing.filechooser.*;
+import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.xml.bind.JAXBElement;
 import javax.xml.bind.JAXBException;
 
@@ -265,6 +277,9 @@ public class Transcript {
 			}
 		catch (UnsupportedLookAndFeelException flatlafException) {
 			System.out.format("Couldn't set flatlaf: %s\n", flatlafException);
+		}
+		catch (Exception exception) {
+			System.out.format("Error when setting look and feel: %s\n", exception);
 		}
 
 		javax.swing.SwingUtilities.invokeLater(() -> {new Transcript();});
