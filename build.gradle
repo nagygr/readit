@@ -1,14 +1,14 @@
 plugins {
-	id 'java'
-	id 'application'
+	id "java"
+	id "application"
 	id "org.openjfx.javafxplugin" version "0.0.9"
 }
 
 sourceCompatibility = 1.11
 targetCompatibility = 1.11
 
-def mainClassFQN = 'com.h119.transcript.Starter'
-def projectName = 'transcript'
+def mainClassFQN = "com.h119.transcript.Starter"
+def projectName = "transcript"
 
 repositories {
 	jcenter()
@@ -16,32 +16,32 @@ repositories {
 
 dependencies {
 	// PDF splitting and conversion to image
-	implementation 'org.apache.pdfbox:jbig2-imageio:3.0.3'
-	implementation 'org.apache.pdfbox:pdfbox-tools:2.0.22'
-	implementation 'org.apache.pdfbox:pdfbox:2.0.22'
+	implementation "org.apache.pdfbox:jbig2-imageio:3.0.3"
+	implementation "org.apache.pdfbox:pdfbox-tools:2.0.22"
+	implementation "org.apache.pdfbox:pdfbox:2.0.22"
 
 	// OCR
-    implementation 'org.bytedeco:tesseract-platform:4.1.1-1.5.4'
+    implementation "org.bytedeco:tesseract-platform:4.1.1-1.5.4"
 
 	// Word file generation
-	implementation 'org.docx4j:docx4j:3.3.5'
-	implementation 'javax.xml.bind:jaxb-api:2.1'
-	implementation 'com.sun.xml.bind:jaxb-impl:2.1.2'
+	implementation "org.docx4j:docx4j:3.3.5"
+	implementation "javax.xml.bind:jaxb-api:2.1"
+	implementation "com.sun.xml.bind:jaxb-impl:2.1.2"
 
 	// JavaFX
-	runtimeOnly "org.openjfx:javafx-base:11:linux"
-	runtimeOnly "org.openjfx:javafx-controls:11:linux"
+	runtimeOnly "org.openjfx:javafx-base:15.0.1:linux"
+	runtimeOnly "org.openjfx:javafx-controls:15.0.1:linux"
 
-	runtimeOnly "org.openjfx:javafx-base:11:win"
-	runtimeOnly "org.openjfx:javafx-controls:11:win"
+	runtimeOnly "org.openjfx:javafx-base:15.0.1:win"
+	runtimeOnly "org.openjfx:javafx-controls:15.0.1:win"
 	
-	runtimeOnly "org.openjfx:javafx-base:11:mac"
-	runtimeOnly "org.openjfx:javafx-controls:11:mac"
+	runtimeOnly "org.openjfx:javafx-base:15.0.1:mac"
+	runtimeOnly "org.openjfx:javafx-controls:15.0.1:mac"
 }
 
 javafx {
 	modules = [ "javafx.controls" ]
-	version = "11"
+	version = "15.0.1"
 }
 
 application {
@@ -50,8 +50,8 @@ application {
 
 task fatJar(type: Jar) {
 	manifest {
-		attributes 'Main-Class': mainClassFQN
-		attributes 'Description': projectName
+		attributes "Main-Class": mainClassFQN
+		attributes "Description": projectName
 	}
 	archiveBaseName = projectName
 	duplicatesStrategy = DuplicatesStrategy.INCLUDE
@@ -64,9 +64,9 @@ task fatJar(type: Jar) {
 	with jar
 
 	exclude(
-		'META-INF/*.DSA',
-		'META-INF/*.SF',
-		'META-INF/*.RSA'
+		"META-INF/*.DSA",
+		"META-INF/*.SF",
+		"META-INF/*.RSA"
 	)
 	with jar
 }
