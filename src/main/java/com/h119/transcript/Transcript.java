@@ -15,6 +15,7 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -27,6 +28,7 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
+import javax.swing.SwingWorker;
 import javax.swing.Timer;
 import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
@@ -165,8 +167,21 @@ public class Transcript {
 			// return and the path of the selected file can be displayed immediately.
 			// The reason is that OCR can take some time and it looks weird that the
 			// path appears with a delay as well.
-			Timer timer = new Timer(1,
-				(ActionEvent timerEvent) -> {
+
+			// Use SwingWorker<Void, Void> and return null from doInBackground if
+			// you don't want any final result and you don't want to update the GUI
+			// as the thread goes along.
+			// First argument is the thread result, returned when processing finished.
+			// Second argument is the value to update the GUI with via publish() and process()
+			SwingWorker<Void, Void> worker = new SwingWorker<>() {
+				/*
+				 * Note: do not update the GUI from within doInBackground.
+				 */
+				@Override
+				protected Void doInBackground() throws Exception {
+					// optional: use publish to send values to process(), which
+					// you can then use to update the GUI.
+					// publish(i);
 					try {
 						var imageFiles = new ArrayList<String>();
 
@@ -228,16 +243,53 @@ public class Transcript {
 						File exportFile = new File(fileNoExtension + ".docx");
 						wordPackage.save(exportFile);
 
-						textArea.setText(String.format("The Word file has been created: %s.docx\n", fileNoExtension));
+						// textArea.setText(String.format("The Word file has been created: %s.docx\n", fileNoExtension));
 					}
 					catch (Exception te) {
-						textArea.setText(te.toString());
+						// textArea.setText(te.toString());
+						// TODO: get this message to the textArea
 					}
+					
+					
+					return null;
 				}
-			);
-			timer.setRepeats(false);
-			timer.start();
 
+				/*
+				@Override
+				// This will be called if you call publish() from doInBackground()
+				// Can safely update the GUI here.
+				protected void process(List<Integer> chunks) {
+					Integer value = chunks.get(chunks.size() - 1);
+					
+					countLabel1.setText("Current value: " + value);
+				}
+				*/
+
+				@Override
+				// This is called when the thread finishes.
+				// Can safely update GUI here.
+				protected void done() {
+					
+					try {
+						get();
+						textArea.append("Done");
+						/*
+						Boolean status = get();
+						statusLabel.setText("Completed with status: " + status);
+						*/
+					} catch (InterruptedException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					} catch (ExecutionException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+					
+				}
+				
+			};
+
+			worker.execute();
 		}
 		catch (Exception exception) {
 			textArea.setText(exception.toString());
