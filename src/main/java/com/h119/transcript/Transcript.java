@@ -14,6 +14,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
@@ -26,6 +27,7 @@ import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javax.swing.JProgressBar;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.SwingWorker;
@@ -68,6 +70,7 @@ public class Transcript {
 	private JButton openImageButton;
 	private JLabel imagePathLabel;
 	private JTextArea textArea;
+	private JProgressBar progressBar;
 
 	private static final int MARGIN = 10;
 	private static final FlatLightLaf lightTheme;
@@ -92,6 +95,8 @@ public class Transcript {
 
 		scroll.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
 		scroll.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+
+		progressBar = new JProgressBar(0, 1000);
 
 		openImageButton.addActionListener(this::imageSelectorPressed);
 
@@ -144,6 +149,15 @@ public class Transcript {
 
 		mainPanel.add(scroll, gbc);
 
+		gbc.gridx = 0;
+		gbc.gridy = 2;
+		gbc.weightx = 1;
+		gbc.weighty = 0;
+		gbc.insets = new Insets(MARGIN, 0, 0, 0);
+		gbc.fill = GridBagConstraints.HORIZONTAL;
+
+		mainPanel.add(progressBar, gbc);
+
 		frame.add(mainPanel);
 		frame.pack();
 		frame.setVisible(true);
@@ -151,150 +165,237 @@ public class Transcript {
 		frame.setLocationRelativeTo(null);
 	}
 
+	public static class StatusReport {
+		public enum Type {
+			MESSAGE,
+			PROGRESS
+		}
+
+		public class InvalidValueAccess extends RuntimeException {
+			private Type valueType;
+
+			public InvalidValueAccess(Type valueType) {
+				this.valueType = valueType;
+			}
+
+			@Override
+			public String toString() {
+				return String.format(
+					"A StatusReport object's value was accessed through the wrong accessor (type: %s)",
+					valueType
+				);
+			}
+		}
+
+		private final Type type;
+		private final Object value;
+
+		public StatusReport(String message) {
+			this.type = Type.MESSAGE;
+			this.value = message;
+		}
+
+		public StatusReport(Integer progress) {
+			this.type = Type.PROGRESS;
+			this.value = progress;
+		}
+
+		public Type getType() {
+			return type;
+		}
+
+		public String getMessage() {
+			if (type == Type.MESSAGE)
+				return (String)value;
+
+			throw new InvalidValueAccess(type);
+		}
+
+		public int getProgress() {
+			if (type == Type.PROGRESS)
+				return (Integer)value;
+
+			throw new InvalidValueAccess(type);
+		}
+	}
+
 	private void imageSelectorPressed(ActionEvent e) {
 		try {
-			var language = ((Language)languageBox.getSelectedItem()).getAlpha3();
+			var documentLanguage = (Language)languageBox.getSelectedItem();
 			var pdfFile = getFile(frame);
-			String pdfFilePath = pdfFile.getCanonicalPath();
-			String fileNoExtension = pdfFilePath.substring(0, pdfFilePath.lastIndexOf("."));
-			var documentText = new StringBuilder();
-			var documentLines = new ArrayList<String>();
+
+			var worker = new OcrWorker(pdfFile, documentLanguage, textArea, progressBar);	
 			
-			imagePathLabel.setText(truncateLongPath(pdfFile.getCanonicalPath()));
-			textArea.setText("Working...\n");
+			textArea.setText(
+				String.format(
+					"The selected document language is: %s\nOpening PDF file: %s\n",
+					documentLanguage.getName(),
+					pdfFile.getCanonicalPath()
+				)
+			);
 
-			// The OCR process is started on a new thread so that this function can
-			// return and the path of the selected file can be displayed immediately.
-			// The reason is that OCR can take some time and it looks weird that the
-			// path appears with a delay as well.
-
-			// Use SwingWorker<Void, Void> and return null from doInBackground if
-			// you don't want any final result and you don't want to update the GUI
-			// as the thread goes along.
-			// First argument is the thread result, returned when processing finished.
-			// Second argument is the value to update the GUI with via publish() and process()
-			SwingWorker<Void, Void> worker = new SwingWorker<>() {
-				/*
-				 * Note: do not update the GUI from within doInBackground.
-				 */
-				@Override
-				protected Void doInBackground() throws Exception {
-					// optional: use publish to send values to process(), which
-					// you can then use to update the GUI.
-					// publish(i);
-					try {
-						var imageFiles = new ArrayList<String>();
-
-						PDDocument document = PDDocument.load(pdfFile);
-						PDFRenderer pdfRenderer = new PDFRenderer(document);
-						for (int page = 0; page < document.getNumberOfPages(); ++page)
-						{ 
-							BufferedImage bim = pdfRenderer.renderImageWithDPI(page, 300, ImageType.RGB);
-
-							// suffix in filename will be used as the file format
-							String imageFileName = fileNoExtension + "-" + (page+1) + ".png";
-
-							// Below are two alternative ways to geenrate the images
-							//*
-							imageFiles.add(imageFileName);
-							ImageIOUtil.writeImage(bim, imageFileName, 300);
-							// */
-							
-							/*
-							imageFiles.add(imageFileName);
-							File tempFile = new File(imageFileName);
-							ImageIO.write(bim, "png", tempFile);
-							// */
-						}
-						document.close();
-
-						BytePointer outText;
-
-						TessBaseAPI api = new TessBaseAPI();
-						if (api.Init("tessdata", language) != 0) {
-							throw new RuntimeException("Could not initialize tesseract.");
-						}
-
-						for (var imageFile: imageFiles) {
-							PIX image = pixRead(imageFile);
-							api.SetImage(image);
-
-							outText = api.GetUTF8Text();
-							documentLines.addAll(
-								Arrays.asList(
-									new String(outText.getStringBytes(), StandardCharsets.UTF_8)
-										.split("\n")
-								)
-							);
-
-							outText.deallocate();
-							pixDestroy(image);
-						}
-
-						api.End();
-
-						WordprocessingMLPackage wordPackage = WordprocessingMLPackage.createPackage();
-						MainDocumentPart mainDocumentPart = wordPackage.getMainDocumentPart();
-
-						for (var line: documentLines) {
-							mainDocumentPart.addParagraphOfText(line);
-						}
-						
-						File exportFile = new File(fileNoExtension + ".docx");
-						wordPackage.save(exportFile);
-
-						// textArea.setText(String.format("The Word file has been created: %s.docx\n", fileNoExtension));
-					}
-					catch (Exception te) {
-						// textArea.setText(te.toString());
-						// TODO: get this message to the textArea
-					}
-					
-					
-					return null;
-				}
-
-				/*
-				@Override
-				// This will be called if you call publish() from doInBackground()
-				// Can safely update the GUI here.
-				protected void process(List<Integer> chunks) {
-					Integer value = chunks.get(chunks.size() - 1);
-					
-					countLabel1.setText("Current value: " + value);
-				}
-				*/
-
-				@Override
-				// This is called when the thread finishes.
-				// Can safely update GUI here.
-				protected void done() {
-					
-					try {
-						get();
-						textArea.append("Done");
-						/*
-						Boolean status = get();
-						statusLabel.setText("Completed with status: " + status);
-						*/
-					} catch (InterruptedException e) {
-						// TODO Auto-generated catch block
-						e.printStackTrace();
-					} catch (ExecutionException e) {
-						// TODO Auto-generated catch block
-						e.printStackTrace();
-					}
-					
-				}
-				
-			};
+			progressBar.setValue(0);
 
 			worker.execute();
 		}
 		catch (Exception exception) {
-			textArea.setText(exception.toString());
+			textArea.append(exception.toString());
 		}
 	}
+
+	public static class OcrWorker extends SwingWorker<Void, StatusReport> {
+		private File pdfFile;
+		private Language documentLanguage;
+		private JTextArea textArea;
+		private JProgressBar progressBar;
+
+		public OcrWorker(
+			File pdfFile, Language documentLanguage,
+			JTextArea textArea, JProgressBar progressBar
+		) {
+			this.pdfFile = pdfFile;
+			this.documentLanguage = documentLanguage;
+			this.textArea = textArea;
+			this.progressBar = progressBar;
+		}
+
+		@Override
+		protected Void doInBackground() throws Exception {
+			try {
+				String pdfFilePath = pdfFile.getCanonicalPath();
+				String fileNoExtension = pdfFilePath.substring(0, pdfFilePath.lastIndexOf("."));
+				var languageCode = documentLanguage.getAlpha3();
+				var documentText = new StringBuilder();
+				var documentLines = new ArrayList<String>();
+
+				var imageFiles = new ArrayList<String>();
+
+				PDDocument document = PDDocument.load(pdfFile);
+				PDFRenderer pdfRenderer = new PDFRenderer(document);
+				int documentPages = document.getNumberOfPages();
+
+				publish(
+					new StatusReport(
+						String.format(
+							"The document consists of %d pages\n",
+							documentPages
+						)
+					)
+				);
+
+				for (int page = 0; page < documentPages; ++page) {
+					BufferedImage bim = pdfRenderer.renderImageWithDPI(page, 300, ImageType.RGB);
+					String imageFileName = fileNoExtension + "-" + (page+1) + ".png";
+
+					publish(
+						new StatusReport(
+							String.format(
+								"Saving %s...\n",
+								imageFileName
+							)
+						)
+					);
+
+					imageFiles.add(imageFileName);
+					ImageIOUtil.writeImage(bim, imageFileName, 300);
+
+					publish(new StatusReport(300 * (page + 1) / documentPages));
+				}
+				document.close();
+
+				BytePointer outText;
+
+				TessBaseAPI api = new TessBaseAPI();
+				if (api.Init("tessdata", languageCode) != 0) {
+					throw new RuntimeException("Could not initialize tesseract.");
+				}
+
+				publish(new StatusReport("Successfully initialized tesseract\n"));
+				publish(new StatusReport("Starting OCR...\n"));
+
+				int page = 0;
+				for (var imageFile: imageFiles) {
+					publish(new StatusReport(String.format("Performing OCR on %s\n", imageFile)));
+
+					PIX image = pixRead(imageFile);
+					api.SetImage(image);
+
+					outText = api.GetUTF8Text();
+					documentLines.addAll(
+						Arrays.asList(
+							new String(outText.getStringBytes(), StandardCharsets.UTF_8)
+								.split("\n")
+						)
+					);
+
+					outText.deallocate();
+					pixDestroy(image);
+					
+					publish(new StatusReport(300 + (300 * (page + 1) / documentPages)));
+					page += 1;
+				}
+
+				api.End();
+
+
+				publish(new StatusReport("Saving the text as a Word document...\n"));
+
+				WordprocessingMLPackage wordPackage = WordprocessingMLPackage.createPackage();
+				MainDocumentPart mainDocumentPart = wordPackage.getMainDocumentPart();
+
+				int currentLine = 0;
+				int lineNumber = documentLines.size();
+
+				for (var line: documentLines) {
+					mainDocumentPart.addParagraphOfText(line);
+					
+					publish(new StatusReport(600 + (400 * (currentLine + 1) / lineNumber)));
+					currentLine += 1;
+				}
+				
+				File exportFile = new File(fileNoExtension + ".docx");
+				wordPackage.save(exportFile);
+
+				publish(
+					new StatusReport(
+						String.format(
+							"The Word file has been created: %s.docx\n",
+							fileNoExtension
+						)
+					)
+				);
+			}
+			catch (Exception te) {
+				publish(new StatusReport(te.toString()));
+			}
+
+			return null;
+		}
+
+		@Override
+		protected void process(List<StatusReport> chunks) {
+			for (var status: chunks) {
+				if (status.getType() == StatusReport.Type.PROGRESS) {
+					progressBar.setValue(status.getProgress());
+				}
+				else {
+					textArea.append(status.getMessage());
+				}
+			}
+		}
+
+		@Override
+		protected void done() {
+			try {
+				get();
+				textArea.append("Done");
+			} catch (InterruptedException e) {
+				textArea.append(e.toString() + "\n");
+			} catch (ExecutionException e) {
+				textArea.append(e.toString() + "\n");
+			}
+		}
+	};
 
 	private static String truncateLongPath(String path) {
 		final int maxLength = 40;
@@ -348,6 +449,7 @@ public class Transcript {
 					.filter(name -> name.indexOf("_") == -1)
 					.map(name -> name.substring(0,3))
 					.map(name -> LanguageCodes.ofAlpha3(name).orElseThrow())
+					.sorted(Comparator.comparing(Language::getName))
 					.collect(Collectors.toList())
 					.toArray();
 		}
