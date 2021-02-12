@@ -182,6 +182,8 @@ public class Transcript {
 		public class InvalidValueAccess extends RuntimeException {
 			private Type valueType;
 
+			private static final long serialVersionUID = 0L;
+
 			public InvalidValueAccess(Type valueType) {
 				this.valueType = valueType;
 			}
