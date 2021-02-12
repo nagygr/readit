@@ -21,6 +21,7 @@ import javax.xml.bind.JAXBElement;
 import javax.xml.bind.JAXBException;
 
 import javafx.application.Application;
+import javafx.application.Platform;
 import javafx.beans.value.*;
 import javafx.collections.*;
 import javafx.concurrent.*;
@@ -29,8 +30,8 @@ import javafx.geometry.*;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
-import javafx.stage.Stage;
 import javafx.stage.FileChooser;
+import javafx.stage.Stage;
 import static javafx.stage.FileChooser.ExtensionFilter;
 
 import org.bytedeco.javacpp.*;
@@ -128,7 +129,7 @@ public class Transcript extends Application {
 				)
 			);
 
-			final var task = new OcrProcess(pdfFile, documentLanguage);
+			final var task = new OcrProcess(pdfFile, documentLanguage, textArea);
 
 			progressBar.progressProperty().bind(task.progressProperty());
 
@@ -151,10 +152,12 @@ public class Transcript extends Application {
 
 		private File pdfFile;
 		private Language documentLanguage;
+		private TextArea textArea;
 
-		public OcrProcess(File pdfFile, Language documentLanguage) {
+		public OcrProcess(File pdfFile, Language documentLanguage, TextArea textArea) {
 			this.pdfFile = pdfFile;
 			this.documentLanguage = documentLanguage;
+			this.textArea = textArea;
 		}
 
 		@Override
@@ -171,21 +174,23 @@ public class Transcript extends Application {
 				PDFRenderer pdfRenderer = new PDFRenderer(document);
 				var documentPages = document.getNumberOfPages();
 
-				updateMessage(String.format("The document consists of %d pages", documentPages));
-				updateMessage("Saving the pages as PNG images...");
+				Platform.runLater(() -> {
+					textArea.appendText(String.format("The document consists of %d pages\n", documentPages));
+				});
+				Platform.runLater(() -> {textArea.appendText("Saving the pages as PNG images...\n");});
 
 				for (int page = 0; page < documentPages; ++page) { 
 					BufferedImage bim = pdfRenderer.renderImageWithDPI(page, 300, ImageType.RGB);
 
-					String imageFileName = fileNoExtension + "-" + (page+1) + ".png";
+					String imageFileName = fileNoExtension + "-" + (page + 1) + ".png";
 
-					updateMessage(String.format("Saving %s...", imageFileName));
+					Platform.runLater(() -> {textArea.appendText(String.format("Saving %s...\n", imageFileName));});
 
 					imageFiles.add(imageFileName);
 					ImageIOUtil.writeImage(bim, imageFileName, 300);
 
 					if (isCancelled()) {
-						updateMessage("Cancelled");
+						Platform.runLater(() -> {textArea.appendText("Cancelled\n");});
 						return null;
 					}
 
@@ -201,12 +206,12 @@ public class Transcript extends Application {
 					throw new RuntimeException("Could not initialize tesseract.");
 				}
 
-				updateMessage("Successfully initialized tesseract");
-				updateMessage("Starting OCR...");
+				Platform.runLater(() -> {textArea.appendText("Successfully initialized tesseract\n");});
+				Platform.runLater(() -> {textArea.appendText("Starting OCR...\n");});
 
 				int page = 0;
 				for (var imageFile: imageFiles) {
-					updateMessage(String.format("Performing OCR on %s", imageFile));
+					Platform.runLater(() -> {textArea.appendText(String.format("Performing OCR on %s\n", imageFile));});
 
 					PIX image = pixRead(imageFile);
 					api.SetImage(image);
@@ -223,16 +228,17 @@ public class Transcript extends Application {
 					pixDestroy(image);
 
 					if (isCancelled()) {
-						updateMessage("Cancelled");
+						Platform.runLater(() -> {textArea.appendText("Cancelled\n");});
 						return null;
 					}
 
 					updateProgress(300 + (300 * (page + 1) / documentPages), 1000);
+					page += 1;
 				}
 
 				api.End();
 
-				updateMessage("Saving the text as a Word document...");
+				Platform.runLater(() -> {textArea.appendText("Saving the text as a Word document...\n");});
 
 				WordprocessingMLPackage wordPackage = WordprocessingMLPackage.createPackage();
 				MainDocumentPart mainDocumentPart = wordPackage.getMainDocumentPart();
@@ -249,15 +255,20 @@ public class Transcript extends Application {
 					}
 
 					updateProgress(600 + (400 * (currentLine + 1) / lineNumber), 1000);
+					currentLine += 1;
 				}
 				
 				File exportFile = new File(fileNoExtension + ".docx");
 				wordPackage.save(exportFile);
 
-				updateMessage(String.format("The Word file has been created: %s.docx\n", fileNoExtension));
+				Platform.runLater(() -> {
+					textArea.appendText(
+						String.format("The Word file has been created: %s.docx\n", fileNoExtension)
+					);
+				});
 			}
 			catch (Exception e) {
-				updateMessage(String.format("Error: %s", e));
+				Platform.runLater(() -> {textArea.appendText(String.format("Error: %s\n", e));});
 			}
 
 			return null;
@@ -266,7 +277,7 @@ public class Transcript extends Application {
 		@Override
 		protected void done() {
 			super.done();
-			updateMessage("Done");
+			Platform.runLater(() -> {textArea.appendText("Done\n");});
 		}
 	}
 
