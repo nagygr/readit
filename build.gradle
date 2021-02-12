@@ -55,6 +55,10 @@ javafx {
 	version = "15.0.1"
 }
 
+application {
+	mainClass.set(mainClassFQN)
+}
+
 compileJava {
     options.warnings = true
     options.deprecation = true
