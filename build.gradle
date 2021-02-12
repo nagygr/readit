@@ -55,6 +55,12 @@ javafx {
 	version = "15.0.1"
 }
 
+compileJava {
+    options.warnings = true
+    options.deprecation = true
+    options.compilerArgs += ["-Xlint:all"]
+}
+
 task fatJar(type: Jar) {
 	manifest {
 		attributes "Main-Class": mainClassFQN
