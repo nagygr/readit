@@ -66,8 +66,11 @@ public class Transcript extends Application {
 	private Button openFileButton;
 	private TextArea textArea;
 	private ProgressBar progressBar;
+	private Button cancelButton;
 
 	private Stage mainStage;
+
+	private Task<Void> currentTask = null;
 
 	private static final int MARGIN = 10;
 
@@ -81,17 +84,24 @@ public class Transcript extends Application {
 		languageBox.setValue(languageBox.getItems().get(0));
 
 		openFileButton = new Button("Open PDF file");
+
 		textArea = new TextArea();
+		textArea.setEditable(false);
 
 		progressBar = new ProgressBar();
 		progressBar.setProgress(0);
 
 		openFileButton.setOnAction(this::openFilePressed);
 
+		cancelButton = new Button("Cancel");
+		cancelButton.setOnAction(this::cancelPressed);
+		cancelButton.setDisable(true);
+
 		final var controlBox = new HBox(
 			languageLabel,
 			languageBox,
-			openFileButton
+			openFileButton,
+			cancelButton
 		);
 
 		controlBox.setSpacing(MARGIN);
@@ -133,17 +143,20 @@ public class Transcript extends Application {
 				)
 			);
 
-			final var task = new OcrProcess(pdfFile, documentLanguage, textArea);
+			currentTask = new OcrProcess(pdfFile, documentLanguage, textArea, openFileButton, cancelButton);
 
-			progressBar.progressProperty().bind(task.progressProperty());
+			cancelButton.setDisable(false);
+			openFileButton.setDisable(true);
 
-			task.messageProperty().addListener(
+			progressBar.progressProperty().bind(currentTask.progressProperty());
+
+			currentTask.messageProperty().addListener(
 				(observableValue, oldValue, newValue) -> {
 					textArea.appendText(newValue + "\n");
 				}
 			);
 
-			new Thread(task).start();
+			new Thread(currentTask).start();
 		}
 		catch (Exception exception) {
 			textArea.appendText(
@@ -157,11 +170,18 @@ public class Transcript extends Application {
 		private final File pdfFile;
 		private final Language documentLanguage;
 		private final TextArea textArea;
+		private final Button openFileButton;
+		private final Button cancelButton;
 
-		public OcrProcess(File pdfFile, Language documentLanguage, TextArea textArea) {
+		public OcrProcess(
+			File pdfFile, Language documentLanguage,
+			TextArea textArea, Button openFileButton, Button cancelButton
+		) {
 			this.pdfFile = pdfFile;
 			this.documentLanguage = documentLanguage;
 			this.textArea = textArea;
+			this.openFileButton = openFileButton;
+			this.cancelButton = cancelButton;
 		}
 
 		@Override
@@ -197,6 +217,7 @@ public class Transcript extends Application {
 
 					if (isCancelled()) {
 						Platform.runLater(() -> {textArea.appendText("Cancelled\n");});
+						updateProgress(0, 1000);
 						return null;
 					}
 
@@ -235,6 +256,7 @@ public class Transcript extends Application {
 
 					if (isCancelled()) {
 						Platform.runLater(() -> {textArea.appendText("Cancelled\n");});
+						updateProgress(0, 1000);
 						return null;
 					}
 
@@ -256,7 +278,8 @@ public class Transcript extends Application {
 					mainDocumentPart.addParagraphOfText(line);
 
 					if (isCancelled()) {
-						updateMessage("Cancelled");
+						Platform.runLater(() -> {textArea.appendText("Cancelled\n");});
+						updateProgress(0, 1000);
 						return null;
 					}
 
@@ -283,7 +306,20 @@ public class Transcript extends Application {
 		@Override
 		protected void done() {
 			super.done();
-			Platform.runLater(() -> {textArea.appendText("Done\n");});
+			Platform.runLater(() -> {
+				textArea.appendText("Done\n");
+				openFileButton.setDisable(false);
+				cancelButton.setDisable(true);
+			});
+		}
+	}
+
+	private void cancelPressed(ActionEvent event) {
+		if (currentTask != null) {
+			currentTask.cancel();
+			currentTask = null;
+			cancelButton.setDisable(true);
+			openFileButton.setDisable(false);
 		}
 	}
 
