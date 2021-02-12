@@ -174,6 +174,8 @@ public class Transcript extends Application {
 				PDFRenderer pdfRenderer = new PDFRenderer(document);
 				var documentPages = document.getNumberOfPages();
 
+				updateProgress(0, 1000);
+
 				Platform.runLater(() -> {
 					textArea.appendText(String.format("The document consists of %d pages\n", documentPages));
 				});
