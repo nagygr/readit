@@ -88,9 +88,11 @@ public class Transcript {
 		imagePathLabel = new JLabel("");
 
 		textArea = new JTextArea(20, 70);
+		textArea.setEditable(false);
+
 		var scroll = new JScrollPane(textArea);
 
-		frame = new JFrame("Read it");
+		frame = new JFrame("Transcript");
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
 		scroll.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
