@@ -16,6 +16,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -67,10 +68,12 @@ import static com.h119.transcript.util.LanguageCodes.Language;
 public class Transcript {
 	private JFrame frame;
 	private JComboBox<Object> languageBox;
-	private JButton openImageButton;
-	private JLabel imagePathLabel;
+	private JButton openFileButton;
+	private JButton cancelButton;
 	private JTextArea textArea;
 	private JProgressBar progressBar;
+
+	private OcrWorker worker = null;
 
 	private static final int MARGIN = 10;
 	private static final FlatLightLaf lightTheme;
@@ -84,8 +87,7 @@ public class Transcript {
 		languageBox = new JComboBox<>(
 			getTrainedLanguages()
 		);
-		openImageButton = new JButton("Open PDF file");
-		imagePathLabel = new JLabel("");
+		openFileButton = new JButton("Open PDF file");
 
 		textArea = new JTextArea(20, 70);
 		textArea.setEditable(false);
@@ -100,7 +102,11 @@ public class Transcript {
 
 		progressBar = new JProgressBar(0, 1000);
 
-		openImageButton.addActionListener(this::imageSelectorPressed);
+		openFileButton.addActionListener(this::openFilePressed);
+
+		cancelButton = new JButton("Cancel");
+		cancelButton.addActionListener(this::cancelPressed);
+		cancelButton.setEnabled(false);
 
 		JPanel controlPanel = new JPanel();
 		controlPanel.setLayout(new GridBagLayout());
@@ -123,13 +129,13 @@ public class Transcript {
 		gbc.gridy = 0;
 		gbc.anchor = GridBagConstraints.LINE_START;
 
-		controlPanel.add(openImageButton, gbc);
+		controlPanel.add(openFileButton, gbc);
 
 		gbc.gridx = 3;
 		gbc.gridy = 0;
 		gbc.anchor = GridBagConstraints.LINE_START;
 
-		controlPanel.add(imagePathLabel, gbc);
+		controlPanel.add(cancelButton, gbc);
 
 		JPanel mainPanel = new JPanel();
 		mainPanel.setLayout(new GridBagLayout());
@@ -221,12 +227,15 @@ public class Transcript {
 		}
 	}
 
-	private void imageSelectorPressed(ActionEvent e) {
+	private void openFilePressed(ActionEvent e) {
 		try {
 			var documentLanguage = (Language)languageBox.getSelectedItem();
 			var pdfFile = getFile(frame);
 
-			var worker = new OcrWorker(pdfFile, documentLanguage, textArea, progressBar);	
+			worker = new OcrWorker(
+				pdfFile, documentLanguage, textArea, progressBar,
+				openFileButton, cancelButton
+			);
 			
 			textArea.setText(
 				String.format(
@@ -235,6 +244,9 @@ public class Transcript {
 					pdfFile.getCanonicalPath()
 				)
 			);
+
+			cancelButton.setEnabled(true);
+			openFileButton.setEnabled(false);
 
 			progressBar.setValue(0);
 
@@ -250,15 +262,20 @@ public class Transcript {
 		private Language documentLanguage;
 		private JTextArea textArea;
 		private JProgressBar progressBar;
+		private JButton openFileButton;
+		private JButton cancelButton;
 
 		public OcrWorker(
 			File pdfFile, Language documentLanguage,
-			JTextArea textArea, JProgressBar progressBar
+			JTextArea textArea, JProgressBar progressBar,
+			JButton openFileButton, JButton cancelButton
 		) {
 			this.pdfFile = pdfFile;
 			this.documentLanguage = documentLanguage;
 			this.textArea = textArea;
 			this.progressBar = progressBar;
+			this.openFileButton = openFileButton;
+			this.cancelButton = cancelButton;
 		}
 
 		@Override
@@ -301,6 +318,12 @@ public class Transcript {
 					imageFiles.add(imageFileName);
 					ImageIOUtil.writeImage(bim, imageFileName, 300);
 
+					if (isCancelled()) {
+						publish(new StatusReport("Cancelled\n"));
+						publish(new StatusReport(0));
+						return null;
+					}
+
 					publish(new StatusReport(300 * (page + 1) / documentPages));
 				}
 				document.close();
@@ -332,6 +355,12 @@ public class Transcript {
 
 					outText.deallocate();
 					pixDestroy(image);
+
+					if (isCancelled()) {
+						publish(new StatusReport("Cancelled\n"));
+						publish(new StatusReport(0));
+						return null;
+					}
 					
 					publish(new StatusReport(300 + (300 * (page + 1) / documentPages)));
 					page += 1;
@@ -350,6 +379,12 @@ public class Transcript {
 
 				for (var line: documentLines) {
 					mainDocumentPart.addParagraphOfText(line);
+
+					if (isCancelled()) {
+						publish(new StatusReport("Cancelled\n"));
+						publish(new StatusReport(0));
+						return null;
+					}
 					
 					publish(new StatusReport(600 + (400 * (currentLine + 1) / lineNumber)));
 					currentLine += 1;
@@ -391,19 +426,28 @@ public class Transcript {
 			try {
 				get();
 				textArea.append("Done");
-			} catch (InterruptedException e) {
+				openFileButton.setEnabled(true);
+				cancelButton.setEnabled(false);
+			}
+			catch (InterruptedException e) {
 				textArea.append(e.toString() + "\n");
-			} catch (ExecutionException e) {
+			}
+			catch (ExecutionException e) {
 				textArea.append(e.toString() + "\n");
+			}
+			catch (CancellationException e) {
+				textArea.append("The cancelled task has finished executing.\n");
 			}
 		}
 	};
 
-	private static String truncateLongPath(String path) {
-		final int maxLength = 40;
-		int length = path.length();
-		if (length < maxLength) return path;
-		return String.format("...%s", path.substring(length - (maxLength - 3)));
+	private void cancelPressed(ActionEvent e) {
+		if (worker != null) {
+			worker.cancel(true);
+			worker = null;
+			cancelButton.setEnabled(false);
+			openFileButton.setEnabled(true);
+		}
 	}
 
 	private File getFile(JFrame parent) throws FileNotFoundException {
