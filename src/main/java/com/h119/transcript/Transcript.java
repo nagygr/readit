@@ -22,23 +22,28 @@ import javax.xml.bind.JAXBException;
 
 import javafx.application.Application;
 import javafx.application.Platform;
-import javafx.beans.value.*;
-import javafx.collections.*;
-import javafx.concurrent.*;
-import javafx.event.*;
-import javafx.geometry.*;
+import javafx.concurrent.Task;
+import javafx.event.ActionEvent;
+import javafx.geometry.Insets;
+import javafx.geometry.Pos;
 import javafx.scene.Scene;
-import javafx.scene.control.*;
-import javafx.scene.layout.*;
+import javafx.scene.control.Button;
+import javafx.scene.control.ComboBox;
+import javafx.scene.control.Label;
+import javafx.scene.control.ProgressBar;
+import javafx.scene.control.TextArea;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
+import javafx.scene.layout.VBox;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import static javafx.stage.FileChooser.ExtensionFilter;
 
-import org.bytedeco.javacpp.*;
-import org.bytedeco.leptonica.*;
-import org.bytedeco.tesseract.*;
-import static org.bytedeco.leptonica.global.lept.*;
-import static org.bytedeco.tesseract.global.tesseract.*;
+import org.bytedeco.javacpp.BytePointer;
+import org.bytedeco.leptonica.PIX;
+import org.bytedeco.tesseract.TessBaseAPI;
+import static org.bytedeco.leptonica.global.lept.pixDestroy;
+import static org.bytedeco.leptonica.global.lept.pixRead;
 
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.rendering.ImageType;
@@ -52,7 +57,6 @@ import org.docx4j.openpackaging.exceptions.Docx4JException;
 import org.docx4j.openpackaging.packages.WordprocessingMLPackage;
 import org.docx4j.openpackaging.parts.WordprocessingML.BinaryPartAbstractImage;
 import org.docx4j.openpackaging.parts.WordprocessingML.MainDocumentPart;
-import org.docx4j.wml.*;
 
 import com.h119.transcript.util.LanguageCodes;
 import static com.h119.transcript.util.LanguageCodes.Language;
@@ -150,9 +154,9 @@ public class Transcript extends Application {
 
 	public static class OcrProcess extends Task<Void> {
 
-		private File pdfFile;
-		private Language documentLanguage;
-		private TextArea textArea;
+		private final File pdfFile;
+		private final Language documentLanguage;
+		private final TextArea textArea;
 
 		public OcrProcess(File pdfFile, Language documentLanguage, TextArea textArea) {
 			this.pdfFile = pdfFile;
@@ -163,7 +167,7 @@ public class Transcript extends Application {
 		@Override
 		public Void call() throws InterruptedException {
 			try {
-				var languageCode = documentLanguage.getAlpha3();
+				String languageCode = documentLanguage.getAlpha3();
 				String pdfFilePath = pdfFile.getCanonicalPath();
 				String fileNoExtension = pdfFilePath.substring(0, pdfFilePath.lastIndexOf("."));
 				var documentText = new StringBuilder();
@@ -172,7 +176,7 @@ public class Transcript extends Application {
 
 				PDDocument document = PDDocument.load(pdfFile);
 				PDFRenderer pdfRenderer = new PDFRenderer(document);
-				var documentPages = document.getNumberOfPages();
+				int documentPages = document.getNumberOfPages();
 
 				updateProgress(0, 1000);
 

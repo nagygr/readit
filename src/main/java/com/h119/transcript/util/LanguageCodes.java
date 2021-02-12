@@ -77,7 +77,6 @@ public class LanguageCodes {
 
 	static {
 		languageCodes = List.of (
-			new Language("English Name of Language","ISO 639-2","ISO 639-1"),
 			new Language("Abkhazian","abk","ab"),
 			new Language("Achinese","ace","<na>"),
 			new Language("Acoli","ach","<na>"),
