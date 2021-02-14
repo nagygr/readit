@@ -26,11 +26,13 @@ import javafx.concurrent.Task;
 import javafx.event.ActionEvent;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
+import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.ProgressBar;
+import javafx.scene.control.ScrollPane;
 import javafx.scene.control.TextArea;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
@@ -87,6 +89,21 @@ public class Transcript extends Application {
 
 		textArea = new TextArea();
 		textArea.setEditable(false);
+
+		/*
+		 * The snippet below is a workaround for a JavaFX bug that makes
+		 * the text in a TextArea blurred on Windows. For details, see:
+		 * https://stackoverflow.com/questions/23728517/blurred-text-in-javafx-textarea
+		 */
+		Platform.runLater(() -> {
+			textArea.setCache(false);
+			ScrollPane sp = (ScrollPane)textArea.getChildrenUnmodifiable().get(0);
+			sp.setCache(false);
+			for (Node n : sp.getChildrenUnmodifiable()) {
+				n.setCache(false);
+			}
+		});
+		/* -- END OF WORKAROUND CODE SNIPPET -- */
 
 		progressBar = new ProgressBar();
 		progressBar.setProgress(0);
