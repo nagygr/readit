@@ -22,6 +22,7 @@ import javax.xml.bind.JAXBException;
 
 import javafx.application.Application;
 import javafx.application.Platform;
+import javafx.collections.ObservableList;
 import javafx.concurrent.Task;
 import javafx.event.ActionEvent;
 import javafx.geometry.Insets;
@@ -39,6 +40,7 @@ import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
+import static javafx.application.Application.STYLESHEET_MODENA;
 import static javafx.stage.FileChooser.ExtensionFilter;
 
 import org.bytedeco.javacpp.BytePointer;
@@ -69,8 +71,13 @@ public class Transcript extends Application {
 	private TextArea textArea;
 	private ProgressBar progressBar;
 	private Button cancelButton;
+	private Button themeButton;
+
+	private enum ThemeState {LIGHT, DARK};
+	private ThemeState themeState = ThemeState.LIGHT;
 
 	private Stage mainStage;
+	private Scene scene;
 
 	private Task<Void> currentTask = null;
 
@@ -114,11 +121,15 @@ public class Transcript extends Application {
 		cancelButton.setOnAction(this::cancelPressed);
 		cancelButton.setDisable(true);
 
+		themeButton = new Button("Dark theme");
+		themeButton.setOnAction(this::themePressed);
+
 		final var controlBox = new HBox(
 			languageLabel,
 			languageBox,
 			openFileButton,
-			cancelButton
+			cancelButton,
+			themeButton
 		);
 
 		controlBox.setSpacing(MARGIN);
@@ -140,7 +151,8 @@ public class Transcript extends Application {
 		progressBar.setMinHeight(Double.NEGATIVE_INFINITY);
 		progressBar.setMaxWidth(Double.MAX_VALUE);
 
-		final var scene = new Scene(layout);
+		scene = new Scene(layout);
+
 		stage.setScene(scene);
 		stage.setTitle("Transcript");
 		stage.centerOnScreen();
@@ -341,6 +353,20 @@ public class Transcript extends Application {
 			currentTask = null;
 			cancelButton.setDisable(true);
 			openFileButton.setDisable(false);
+		}
+	}
+
+	private void themePressed(ActionEvent event) {
+		if (themeState == ThemeState.LIGHT) {
+			themeState = ThemeState.DARK;
+			themeButton.setText("Light theme");
+			scene.getStylesheets().add("/modena-dark.css");
+		}
+		else {
+			themeState = ThemeState.LIGHT;
+			themeButton.setText("Dark theme");
+			ObservableList<String> styleSheets = scene.getStylesheets();
+			styleSheets.remove(0, styleSheets.size());
 		}
 	}
 
