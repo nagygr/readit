@@ -302,12 +302,14 @@ public class Transcript extends Application {
 						return null;
 					}
 
-					updateProgress(600 + (400 * (currentLine + 1) / lineNumber), 1000);
+					updateProgress(600 + (360 * (currentLine + 1) / lineNumber), 1000);
 					currentLine += 1;
 				}
 				
 				File exportFile = new File(fileNoExtension + ".docx");
 				wordPackage.save(exportFile);
+
+				updateProgress(1000, 1000);
 
 				Platform.runLater(() -> {
 					textArea.appendText(
