@@ -390,12 +390,14 @@ public class Transcript {
 						return null;
 					}
 					
-					publish(new StatusReport(600 + (400 * (currentLine + 1) / lineNumber)));
+					publish(new StatusReport(600 + (360 * (currentLine + 1) / lineNumber)));
 					currentLine += 1;
 				}
 				
 				File exportFile = new File(fileNoExtension + ".docx");
 				wordPackage.save(exportFile);
+
+				publish(new StatusReport(1000));
 
 				publish(
 					new StatusReport(
