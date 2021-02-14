@@ -37,6 +37,7 @@ import javafx.scene.control.ScrollPane;
 import javafx.scene.control.TextArea;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
+import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
@@ -124,11 +125,14 @@ public class Transcript extends Application {
 		themeButton = new Button("Dark theme");
 		themeButton.setOnAction(this::themePressed);
 
+		final var spacer = new Region();
+
 		final var controlBox = new HBox(
 			languageLabel,
 			languageBox,
 			openFileButton,
 			cancelButton,
+			spacer,
 			themeButton
 		);
 
@@ -143,6 +147,8 @@ public class Transcript extends Application {
 
 		layout.setSpacing(MARGIN);
 		layout.setPadding(new Insets(MARGIN, MARGIN, MARGIN, MARGIN));
+
+		HBox.setHgrow(spacer, Priority.ALWAYS);
 
 		VBox.setVgrow(controlBox, Priority.NEVER);
 		VBox.setVgrow(textArea, Priority.ALWAYS);
