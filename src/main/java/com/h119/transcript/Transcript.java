@@ -323,6 +323,7 @@ public class Transcript {
 					if (isCancelled()) {
 						publish(new StatusReport("Cancelled\n"));
 						publish(new StatusReport(0));
+						document.close();
 						return null;
 					}
 
@@ -361,6 +362,7 @@ public class Transcript {
 					if (isCancelled()) {
 						publish(new StatusReport("Cancelled\n"));
 						publish(new StatusReport(0));
+						api.End();
 						return null;
 					}
 					
