@@ -235,6 +235,7 @@ public class Transcript extends Application {
 					if (isCancelled()) {
 						Platform.runLater(() -> {textArea.appendText("Cancelled\n");});
 						updateProgress(0, 1000);
+						document.close();
 						return null;
 					}
 
@@ -274,6 +275,7 @@ public class Transcript extends Application {
 					if (isCancelled()) {
 						Platform.runLater(() -> {textArea.appendText("Cancelled\n");});
 						updateProgress(0, 1000);
+						api.End();
 						return null;
 					}
 
