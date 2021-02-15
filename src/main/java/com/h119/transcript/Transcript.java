@@ -35,6 +35,7 @@ import javafx.scene.control.Label;
 import javafx.scene.control.ProgressBar;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.control.TextArea;
+import javafx.scene.image.ImageView;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
@@ -76,6 +77,8 @@ public class Transcript extends Application {
 
 	private enum ThemeState {LIGHT, DARK};
 	private ThemeState themeState = ThemeState.LIGHT;
+	private ImageView lightThemeIcon;
+	private ImageView darkThemeIcon;
 
 	private Stage mainStage;
 	private Scene scene;
@@ -122,7 +125,11 @@ public class Transcript extends Application {
 		cancelButton.setOnAction(this::cancelPressed);
 		cancelButton.setDisable(true);
 
-		themeButton = new Button("Dark theme");
+		lightThemeIcon = new ImageView("/light_theme.png");
+		darkThemeIcon = new ImageView("/dark_theme.png");
+
+		themeButton = new Button();
+		themeButton.setGraphic(darkThemeIcon);
 		themeButton.setOnAction(this::themePressed);
 
 		final var spacer = new Region();
@@ -365,12 +372,12 @@ public class Transcript extends Application {
 	private void themePressed(ActionEvent event) {
 		if (themeState == ThemeState.LIGHT) {
 			themeState = ThemeState.DARK;
-			themeButton.setText("Light theme");
+			themeButton.setGraphic(lightThemeIcon);
 			scene.getStylesheets().add("/modena-dark.css");
 		}
 		else {
 			themeState = ThemeState.LIGHT;
-			themeButton.setText("Dark theme");
+			themeButton.setGraphic(darkThemeIcon);
 			ObservableList<String> styleSheets = scene.getStylesheets();
 			styleSheets.remove(0, styleSheets.size());
 		}
