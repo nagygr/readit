@@ -125,8 +125,8 @@ public class Transcript extends Application {
 		cancelButton.setOnAction(this::cancelPressed);
 		cancelButton.setDisable(true);
 
-		lightThemeIcon = new ImageView("/light_theme.png");
-		darkThemeIcon = new ImageView("/dark_theme.png");
+		lightThemeIcon = new ImageView("/lightTheme.png");
+		darkThemeIcon = new ImageView("/darkTheme.png");
 
 		themeButton = new Button();
 		themeButton.setGraphic(darkThemeIcon);
