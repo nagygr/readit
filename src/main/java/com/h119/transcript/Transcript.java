@@ -35,6 +35,7 @@ import javafx.scene.control.Label;
 import javafx.scene.control.ProgressBar;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.control.TextArea;
+import javafx.scene.control.Tooltip;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
@@ -130,6 +131,7 @@ public class Transcript extends Application {
 
 		themeButton = new Button();
 		themeButton.setGraphic(darkThemeIcon);
+		themeButton.setTooltip(new Tooltip("Change between light/dark theme"));
 		themeButton.setOnAction(this::themePressed);
 
 		final var spacer = new Region();
