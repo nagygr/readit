@@ -209,6 +209,14 @@ public class Transcript extends Application {
 					if (newValue == Worker.State.SUCCEEDED) {
 						var alert = new Alert(AlertType.INFORMATION);
 						alert.setContentText("The task has completed successfully.");
+
+						if (themeState == ThemeState.DARK) {
+							alert
+								.getDialogPane()
+								.getStylesheets()
+								.add("/modena-dark.css");
+						}
+
 						alert.show();
 					}
 				}
