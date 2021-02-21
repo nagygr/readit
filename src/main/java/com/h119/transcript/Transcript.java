@@ -191,9 +191,10 @@ public class Transcript extends Application {
 			currentTask.stateProperty().addListener(
 				(observableValue, oldValue, newValue) -> {
 					if (newValue == Worker.State.SUCCEEDED) {
-						final var processingWindow = new ImageProcessingWindow(themeState, imageFiles);
-
-						processingWindow.showAndWait();
+						if (imageFiles.size() > 0) {
+							final var processingWindow = new ImageProcessingWindow(themeState, imageFiles);
+							processingWindow.showAndWait();
+						}
 
 						progressBar.progressProperty().unbind();
 
