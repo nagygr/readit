@@ -61,7 +61,8 @@ public class Transcript extends Application {
 	private Button cancelButton;
 	private Button themeButton;
 
-	private enum ThemeState {LIGHT, DARK};
+	public enum ThemeState {LIGHT, DARK};
+
 	private ThemeState themeState = ThemeState.LIGHT;
 	private ImageView lightThemeIcon;
 	private ImageView darkThemeIcon;
@@ -190,17 +191,9 @@ public class Transcript extends Application {
 			currentTask.stateProperty().addListener(
 				(observableValue, oldValue, newValue) -> {
 					if (newValue == Worker.State.SUCCEEDED) {
-						var alert = new Alert(AlertType.INFORMATION);
-						alert.setContentText("Image saving has finished successfully.");
+						final var processingWindow = new ImageProcessingWindow(themeState, imageFiles);
 
-						if (themeState == ThemeState.DARK) {
-							alert
-								.getDialogPane()
-								.getStylesheets()
-								.add("/modena-dark.css");
-						}
-
-						alert.showAndWait();
+						processingWindow.showAndWait();
 
 						progressBar.progressProperty().unbind();
 

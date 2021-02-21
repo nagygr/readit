@@ -49,7 +49,7 @@ class ImageCreationProcess extends Task<Void> {
 			});
 			Platform.runLater(() -> {textArea.appendText("Saving the pages as PNG images...\n");});
 
-			for (int page = 0; page < documentPages; ++page) { 
+			for (int page = 0; page < documentPages; ++page) {
 				BufferedImage bim = pdfRenderer.renderImageWithDPI(page, 300, ImageType.RGB);
 
 				String imageFileName = fileNoExtension + "-" + (page + 1) + ".png";
@@ -68,7 +68,7 @@ class ImageCreationProcess extends Task<Void> {
 
 				updateProgress(300 * (page + 1) / documentPages, 1000);
 			}
-			
+
 			document.close();
 		}
 		catch (Exception e) {

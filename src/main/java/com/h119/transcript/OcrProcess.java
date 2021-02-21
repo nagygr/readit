@@ -58,7 +58,7 @@ class OcrProcess extends Task<Void> {
 			String fileNoExtension = pdfFilePath.substring(0, pdfFilePath.lastIndexOf("."));
 
 			int documentPages = imageFiles.size();
-			
+
 			updateProgress(300, 1000);
 
 			BytePointer outText;
@@ -122,7 +122,7 @@ class OcrProcess extends Task<Void> {
 				updateProgress(600 + (360 * (currentLine + 1) / lineNumber), 1000);
 				currentLine += 1;
 			}
-			
+
 			File exportFile = new File(fileNoExtension + ".docx");
 			wordPackage.save(exportFile);
 
