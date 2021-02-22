@@ -2,14 +2,20 @@ package com.h119.transcript;
 
 import java.util.ArrayList;
 
+import javafx.event.ActionEvent;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.geometry.Rectangle2D;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
+import javafx.scene.control.ScrollPane;
+import javafx.scene.control.TextField;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
+import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
 import javafx.stage.Modality;
 import javafx.stage.Screen;
@@ -23,6 +29,10 @@ class ImageProcessingWindow {
 	private Stage window;
 	private Label imagePath;
 	private ImageView currentImage;
+	private TextField imageIndexField;
+	private Button jumpButton;
+	private Button leftJump;
+	private Button rightJump;
 
 	private final static int MARGIN = 10;
 
@@ -54,11 +64,49 @@ class ImageProcessingWindow {
 
 		setupImage(imageFile);
 
-        Button closeButton = new Button("Close this window");
+		imageIndexField = new TextField(String.format("%d", currentImageIndex + 1));
+
+		jumpButton = new Button("Jump");
+		jumpButton.setOnAction(e -> jumpToNewPage());
+
+		leftJump = new Button("<<");
+		leftJump.setOnAction(this::jumpOne);
+		rightJump = new Button(">>");
+		rightJump.setOnAction(this::jumpOne);
+
+        Button closeButton = new Button("Close");
         closeButton.setOnAction(e -> window.close());
 
-        VBox layout = new VBox();
-        layout.getChildren().addAll(imagePath, currentImage, closeButton);
+		var leftSpacer = new Region();
+		var rightSpacer = new Region();
+
+		var jumpControlBox = new HBox();
+		jumpControlBox.getChildren().addAll(
+			leftJump,
+			leftSpacer,
+			imageIndexField,
+			jumpButton,
+			rightSpacer,
+			rightJump
+		);
+        jumpControlBox.setAlignment(Pos.CENTER);
+		jumpControlBox.setSpacing(MARGIN);
+		jumpControlBox.setPadding(new Insets(MARGIN, MARGIN, MARGIN, MARGIN));
+
+		HBox.setHgrow(leftSpacer, Priority.ALWAYS);
+		HBox.setHgrow(rightSpacer, Priority.ALWAYS);
+
+		var scrollPane = new ScrollPane();
+		scrollPane.setContent(currentImage);
+
+        var layout = new VBox();
+        layout.getChildren().addAll
+		(
+			imagePath,
+			jumpControlBox,
+			scrollPane,
+			closeButton
+		);
         layout.setAlignment(Pos.CENTER);
 		layout.setSpacing(MARGIN);
 		layout.setPadding(new Insets(MARGIN, MARGIN, MARGIN, MARGIN));
@@ -88,5 +136,39 @@ class ImageProcessingWindow {
 
 		currentImage.setPreserveRatio(true);
 		currentImage.setSmooth(true);
+	}
+
+	private void jumpToNewPage() {
+		try {
+			int newIndex = Integer.parseInt(imageIndexField.getText()) - 1;
+
+			if (newIndex >= 0 && newIndex < imageFiles.size()) {
+				var path = imageFiles.get(newIndex);
+				setupImage(path);
+				currentImageIndex = newIndex;
+			}
+		}
+		catch (NumberFormatException nfe) {
+		}
+
+		imageIndexField.setText(String.format("%d", currentImageIndex + 1));
+	}
+
+	private void jumpOne(ActionEvent e) {
+		try {
+			int currentPage = Integer.parseInt(imageIndexField.getText());
+
+			if (e.getSource() == leftJump) {
+				imageIndexField.setText(String.format("%d", currentPage - 1));
+			}
+			else {
+				imageIndexField.setText(String.format("%d", currentPage + 1));
+			}
+
+			jumpToNewPage();
+		}
+		catch (NumberFormatException nfe) {
+		}
+
 	}
 }
