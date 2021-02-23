@@ -47,9 +47,17 @@ retrieved from
 
 The following steps are needed:
 
+1.	change to the root directory of the project (`transcript`)
+2.	clone the repository above
+	-	it will create a directory called `tessdata` and place the contents
+		of the repository there
+
+OR
+
 1.	create a directory called `tessdata`
-2.	clone the repository above or download its contents and place the
-	`traineddata` files for the required languages in `tessdata`
+2.	download the contents of the repository above (or just the `tessdata` files
+	of the languages that you would like to work with) and place the `traineddata`
+	files for the required languages in `tessdata`
 
 ## Usage
 
@@ -66,3 +74,7 @@ You need to browse for the PDF file. It will create a PNG image file for every
 page of the document and then a DOCX file with the same name as the original PDF
 file. The image files are kept but can be deleted when the transformation is
 complete.
+
+When the image files have been created, a dialog window pops up that allows you
+to rotate pages of the document. Make sure that the text looks upright on all
+pages, otherwise the OCR algorithm will not be able to recognize it.
