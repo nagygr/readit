@@ -1,7 +1,5 @@
 package com.h119.transcript;
 
-import java.awt.*;
-import java.awt.event.*;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -12,265 +10,259 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import javax.imageio.ImageIO;
-import javax.swing.*;
-import javax.swing.border.EmptyBorder;
-import javax.swing.filechooser.*;
 import javax.xml.bind.JAXBElement;
 import javax.xml.bind.JAXBException;
 
-import org.bytedeco.javacpp.*;
-import org.bytedeco.leptonica.*;
-import org.bytedeco.tesseract.*;
-import static org.bytedeco.leptonica.global.lept.*;
-import static org.bytedeco.tesseract.global.tesseract.*;
-
-import org.apache.pdfbox.pdmodel.PDDocument;
-import org.apache.pdfbox.rendering.ImageType;
-import org.apache.pdfbox.rendering.PDFRenderer;
-import org.apache.pdfbox.tools.imageio.ImageIOUtil;
-
-import org.docx4j.dml.wordprocessingDrawing.Inline;
-import org.docx4j.jaxb.Context;
-import org.docx4j.model.table.TblFactory;
-import org.docx4j.openpackaging.exceptions.Docx4JException;
-import org.docx4j.openpackaging.packages.WordprocessingMLPackage;
-import org.docx4j.openpackaging.parts.WordprocessingML.BinaryPartAbstractImage;
-import org.docx4j.openpackaging.parts.WordprocessingML.MainDocumentPart;
-import org.docx4j.wml.*;
-
-import com.formdev.flatlaf.*;
+import javafx.application.Application;
+import javafx.application.Platform;
+import javafx.collections.ObservableList;
+import javafx.concurrent.Task;
+import javafx.concurrent.Worker;
+import javafx.event.ActionEvent;
+import javafx.geometry.Insets;
+import javafx.geometry.Pos;
+import javafx.scene.Node;
+import javafx.scene.Scene;
+import javafx.scene.control.Alert;
+import javafx.scene.control.Button;
+import javafx.scene.control.ComboBox;
+import javafx.scene.control.Label;
+import javafx.scene.control.ProgressBar;
+import javafx.scene.control.ScrollPane;
+import javafx.scene.control.TextArea;
+import javafx.scene.control.Tooltip;
+import javafx.scene.image.ImageView;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
+import javafx.scene.layout.Region;
+import javafx.scene.layout.VBox;
+import javafx.stage.FileChooser;
+import javafx.stage.Stage;
+import static javafx.application.Application.STYLESHEET_MODENA;
+import static javafx.concurrent.Worker.State;
+import static javafx.scene.control.Alert.AlertType;
+import static javafx.stage.FileChooser.ExtensionFilter;
 
 import com.h119.transcript.util.LanguageCodes;
 import static com.h119.transcript.util.LanguageCodes.Language;
 
-public class Transcript {
-	private JFrame frame;
-	private JComboBox<Object> languageBox;
-	private JButton openImageButton;
-	private JLabel imagePathLabel;
-	private JTextArea textArea;
+public class Transcript extends Application {
+	private ComboBox<Language> languageBox;
+	private Button openFileButton;
+	private TextArea textArea;
+	private ProgressBar progressBar;
+	private Button cancelButton;
+	private Button themeButton;
+
+	public enum ThemeState {LIGHT, DARK};
+
+	private ThemeState themeState = ThemeState.LIGHT;
+	private ImageView lightThemeIcon;
+	private ImageView darkThemeIcon;
+
+	private Stage mainStage;
+	private Scene scene;
+
+	private Task<Void> currentTask = null;
 
 	private static final int MARGIN = 10;
-	private static final FlatLightLaf lightTheme;
 
-	static {
-		lightTheme = new FlatLightLaf();
-	}
+	public void start(final Stage stage) throws Exception {
+		mainStage = stage;
 
-	public Transcript() {
-		var languageLabel = new JLabel("Language:");
-		languageBox = new JComboBox<>(
-			getTrainedLanguages()
+		final var languageLabel = new Label("Language:");
+		
+		languageBox = new ComboBox<>();
+		languageBox.getItems().addAll(getTrainedLanguages());
+		languageBox.setValue(languageBox.getItems().get(0));
+
+		openFileButton = new Button("Open PDF file");
+
+		textArea = new TextArea();
+		textArea.setEditable(false);
+
+		/*
+		 * The snippet below is a workaround for a JavaFX bug that makes
+		 * the text in a TextArea blurred on Windows. For details, see:
+		 * https://stackoverflow.com/questions/23728517/blurred-text-in-javafx-textarea
+		 */
+		Platform.runLater(() -> {
+			textArea.setCache(false);
+			ScrollPane sp = (ScrollPane)textArea.getChildrenUnmodifiable().get(0);
+			sp.setCache(false);
+			for (Node n : sp.getChildrenUnmodifiable()) {
+				n.setCache(false);
+			}
+		});
+		/* -- END OF WORKAROUND CODE SNIPPET -- */
+
+		progressBar = new ProgressBar();
+		progressBar.setProgress(0);
+
+		openFileButton.setOnAction(this::openFilePressed);
+
+		cancelButton = new Button("Cancel");
+		cancelButton.setOnAction(this::cancelPressed);
+		cancelButton.setDisable(true);
+
+		lightThemeIcon = new ImageView("/lightTheme.png");
+		darkThemeIcon = new ImageView("/darkTheme.png");
+
+		themeButton = new Button();
+		themeButton.setGraphic(darkThemeIcon);
+		themeButton.setTooltip(new Tooltip("Change between light/dark theme"));
+		themeButton.setOnAction(this::themePressed);
+
+		final var spacer = new Region();
+
+		final var controlBox = new HBox(
+			languageLabel,
+			languageBox,
+			openFileButton,
+			cancelButton,
+			spacer,
+			themeButton
 		);
-		openImageButton = new JButton("Open PDF file");
-		imagePathLabel = new JLabel("");
 
-		textArea = new JTextArea(20, 70);
-		var scroll = new JScrollPane(textArea);
+		controlBox.setSpacing(MARGIN);
+		controlBox.setAlignment(Pos.CENTER_LEFT);
 
-		frame = new JFrame("Read it");
-    	frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		final var layout = new VBox(
+			controlBox,
+			textArea,
+			progressBar
+		);
 
-		scroll.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
-		scroll.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+		layout.setSpacing(MARGIN);
+		layout.setPadding(new Insets(MARGIN, MARGIN, MARGIN, MARGIN));
 
-		openImageButton.addActionListener(this::imageSelectorPressed);
+		HBox.setHgrow(spacer, Priority.ALWAYS);
 
-		JPanel controlPanel = new JPanel();
-		controlPanel.setLayout(new GridBagLayout());
-		GridBagConstraints gbc = new GridBagConstraints();
+		VBox.setVgrow(controlBox, Priority.NEVER);
+		VBox.setVgrow(textArea, Priority.ALWAYS);
+		VBox.setVgrow(progressBar, Priority.NEVER);
 
-		gbc.gridx = 0;
-		gbc.gridy = 0;
-		gbc.anchor = GridBagConstraints.LINE_START;
-		gbc.insets = new Insets(0, 0, 0, MARGIN); // top, left, bottom, right
+		progressBar.setMinHeight(Double.NEGATIVE_INFINITY);
+		progressBar.setMaxWidth(Double.MAX_VALUE);
 
-		controlPanel.add(languageLabel, gbc);
+		scene = new Scene(layout);
 
-		gbc.gridx = 1;
-		gbc.gridy = 0;
-		gbc.anchor = GridBagConstraints.LINE_START;
-
-		controlPanel.add(languageBox, gbc);
-
-		gbc.gridx = 2;
-		gbc.gridy = 0;
-		gbc.anchor = GridBagConstraints.LINE_START;
-
-		controlPanel.add(openImageButton, gbc);
-
-		gbc.gridx = 3;
-		gbc.gridy = 0;
-		gbc.anchor = GridBagConstraints.LINE_START;
-
-		controlPanel.add(imagePathLabel, gbc);
-
-		JPanel mainPanel = new JPanel();
-		mainPanel.setLayout(new GridBagLayout());
-		mainPanel.setBorder(new EmptyBorder(MARGIN, MARGIN, MARGIN, MARGIN)); // top, left, bottom, right
-
-		gbc.gridx = 0;
-		gbc.gridy = 0;
-		gbc.anchor = GridBagConstraints.LINE_START;
-		gbc.insets = new Insets(0, 0, MARGIN, 0); // top, left, bottom, right
-
-		mainPanel.add(controlPanel, gbc);
-
-		gbc.gridx = 0;
-		gbc.gridy = 1;
-		gbc.weightx = 1;
-		gbc.weighty = 1;
-		gbc.insets = new Insets(0, 0, 0, 0);
-		gbc.fill = GridBagConstraints.BOTH;
-
-		mainPanel.add(scroll, gbc);
-
-		frame.add(mainPanel);
-		frame.pack();
-		frame.setVisible(true);
-
-		frame.setLocationRelativeTo(null);
+		stage.setScene(scene);
+		stage.setTitle("Transcript");
+		stage.centerOnScreen();
+		stage.show();
 	}
 
-	private void imageSelectorPressed(ActionEvent e) {
+	private void openFilePressed(ActionEvent event) {
 		try {
-			var language = ((Language)languageBox.getSelectedItem()).getAlpha3();
-			var pdfFile = getFile(frame);
-			String pdfFilePath = pdfFile.getCanonicalPath();
-			String fileNoExtension = pdfFilePath.substring(0, pdfFilePath.lastIndexOf("."));
-			var documentText = new StringBuilder();
-			var documentLines = new ArrayList<String>();
-			
-			imagePathLabel.setText(truncateLongPath(pdfFile.getCanonicalPath()));
-			textArea.setText("Working...\n");
+			var pdfFile = getFile(mainStage);
+			var documentLanguage = languageBox.getValue();
 
-			// The OCR process is started on a new thread so that this function can
-			// return and the path of the selected file can be displayed immediately.
-			// The reason is that OCR can take some time and it looks weird that the
-			// path appears with a delay as well.
-			Timer timer = new Timer(1,
-				(ActionEvent timerEvent) -> {
-					try {
-						var imageFiles = new ArrayList<String>();
+			textArea.setText(
+				String.format(
+					"The selected document language is: %s\nOpening PDF file: %s\n",
+					documentLanguage.getName(),
+					pdfFile.getCanonicalPath()
+				)
+			);
 
-						PDDocument document = PDDocument.load(pdfFile);
-						PDFRenderer pdfRenderer = new PDFRenderer(document);
-						for (int page = 0; page < document.getNumberOfPages(); ++page)
-						{ 
-							BufferedImage bim = pdfRenderer.renderImageWithDPI(page, 300, ImageType.RGB);
+			var imageFiles = new ArrayList<String>();
 
-							// suffix in filename will be used as the file format
-							String imageFileName = fileNoExtension + "-" + (page+1) + ".png";
+			currentTask = new ImageCreationProcess(pdfFile, imageFiles, textArea);
 
-							// Below are two alternative ways to geenrate the images
-							//*
-							imageFiles.add(imageFileName);
-							ImageIOUtil.writeImage(bim, imageFileName, 300);
-							// */
-							
-							/*
-							imageFiles.add(imageFileName);
-							File tempFile = new File(imageFileName);
-							ImageIO.write(bim, "png", tempFile);
-							// */
-						}
-						document.close();
+			cancelButton.setDisable(false);
+			openFileButton.setDisable(true);
 
-						BytePointer outText;
+			progressBar.progressProperty().bind(currentTask.progressProperty());
 
-						TessBaseAPI api = new TessBaseAPI();
-						if (api.Init("tessdata", language) != 0) {
-							throw new RuntimeException("Could not initialize tesseract.");
+			currentTask.messageProperty().addListener(
+				(observableValue, oldValue, newValue) -> {
+					textArea.appendText(newValue + "\n");
+				}
+			);
+
+			currentTask.stateProperty().addListener(
+				(observableValue, oldValue, newValue) -> {
+					if (newValue == Worker.State.SUCCEEDED) {
+						if (imageFiles.size() > 0) {
+							final var processingWindow = new ImageProcessingWindow(themeState, imageFiles);
+							processingWindow.showAndWait();
 						}
 
-						for (var imageFile: imageFiles) {
-							PIX image = pixRead(imageFile);
-							api.SetImage(image);
+						progressBar.progressProperty().unbind();
 
-							outText = api.GetUTF8Text();
-							documentLines.addAll(
-								Arrays.asList(
-									new String(outText.getStringBytes(), StandardCharsets.UTF_8)
-										.split("\n")
-								)
-							);
+						currentTask = new OcrProcess(pdfFile, documentLanguage, imageFiles, textArea, openFileButton, cancelButton);
 
-							outText.deallocate();
-							pixDestroy(image);
-						}
+						progressBar.progressProperty().bind(currentTask.progressProperty());
 
-						api.End();
+						currentTask.messageProperty().addListener(
+							(observableMessage, oldMessage, newMessage) -> {
+								textArea.appendText(newMessage + "\n");
+							}
+						);
 
-						WordprocessingMLPackage wordPackage = WordprocessingMLPackage.createPackage();
-						MainDocumentPart mainDocumentPart = wordPackage.getMainDocumentPart();
-
-						for (var line: documentLines) {
-							mainDocumentPart.addParagraphOfText(line);
-						}
-						
-						File exportFile = new File(fileNoExtension + ".docx");
-						wordPackage.save(exportFile);
-
-						textArea.setText(String.format("The Word file has been created: %s.docx\n", fileNoExtension));
-					}
-					catch (Exception te) {
-						textArea.setText(te.toString());
+						new Thread(currentTask).start();
 					}
 				}
 			);
-			timer.setRepeats(false);
-			timer.start();
 
+			new Thread(currentTask).start();
 		}
 		catch (Exception exception) {
-			textArea.setText(exception.toString());
+			textArea.appendText(
+				String.format("Error: %s\n", exception)
+			);
 		}
 	}
 
-	private static String truncateLongPath(String path) {
-		final int maxLength = 40;
-		int length = path.length();
-		if (length < maxLength) return path;
-		return String.format("...%s", path.substring(length - (maxLength - 3)));
-	}
-
-	private File getFile(JFrame parent) throws FileNotFoundException {
-		JFileChooser jfc = new JFileChooser(".");
-
-		jfc.setDialogTitle("Open PDF file");
-		
-		jfc.setAcceptAllFileFilterUsed(false);
-		FileNameExtensionFilter filter = new FileNameExtensionFilter("PDF files", "pdf");
-		jfc.addChoosableFileFilter(filter);
-
-		int returnValue = jfc.showOpenDialog(parent);
-		if (returnValue == JFileChooser.APPROVE_OPTION) {
-			File file = jfc.getSelectedFile();
-
-			if (file == null) throw new FileNotFoundException();
-
-			return file;
+	private void cancelPressed(ActionEvent event) {
+		if (currentTask != null) {
+			currentTask.cancel();
+			currentTask = null;
+			cancelButton.setDisable(true);
+			openFileButton.setDisable(false);
 		}
-		else throw new FileNotFoundException();
 	}
 
-	public static void main(String[] args) {
-		try {
-				UIManager.setLookAndFeel(lightTheme);
-			}
-		catch (UnsupportedLookAndFeelException flatlafException) {
-			System.out.format("Couldn't set flatlaf: %s\n", flatlafException);
+	private void themePressed(ActionEvent event) {
+		if (themeState == ThemeState.LIGHT) {
+			themeState = ThemeState.DARK;
+			themeButton.setGraphic(lightThemeIcon);
+			scene.getStylesheets().add("/modena-dark.css");
 		}
-
-		javax.swing.SwingUtilities.invokeLater(() -> {new Transcript();});
+		else {
+			themeState = ThemeState.LIGHT;
+			themeButton.setGraphic(darkThemeIcon);
+			ObservableList<String> styleSheets = scene.getStylesheets();
+			styleSheets.remove(0, styleSheets.size());
+		}
 	}
 
-	private static Object[] getTrainedLanguages() {
+	private File getFile(Stage parent) throws FileNotFoundException {
+		FileChooser fileChooser = new FileChooser();
+		fileChooser.setTitle("Open PDF File");
+		fileChooser
+			.getExtensionFilters()
+			.addAll(
+				new ExtensionFilter("PDF Files", "*.pdf")
+			);
+
+		File selectedFile = fileChooser.showOpenDialog(parent);
+
+		if (selectedFile == null)
+			throw new FileNotFoundException();
+
+		return selectedFile;
+	}
+
+	private static List<Language> getTrainedLanguages() {
 		try {
 			return
 				Files.list(Paths.get("tessdata"))
@@ -281,11 +273,16 @@ public class Transcript {
 					.filter(name -> name.indexOf("_") == -1)
 					.map(name -> name.substring(0,3))
 					.map(name -> LanguageCodes.ofAlpha3(name).orElseThrow())
-					.collect(Collectors.toList())
-					.toArray();
+					.sorted(Comparator.comparing(Language::getName))
+					.collect(Collectors.toList());
 		}
 		catch (Exception e) {
 			throw new RuntimeException(e);
 		}
 	}
+
+	public static void bootstrap(String[] args) {
+		launch(args);
+	}
+
 }

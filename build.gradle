@@ -1,44 +1,74 @@
 plugins {
-	id 'java'
-	id 'application'
+	id "java"
+	id "application"
+	id "org.openjfx.javafxplugin" version "0.0.9"
 }
 
-sourceCompatibility = 1.11
-targetCompatibility = 1.11
+sourceCompatibility = 11
+targetCompatibility = 11
 
-def mainClassFQN = 'com.h119.transcript.Transcript'
-def projectName = 'transcript'
+def mainClassFQN = "com.h119.transcript.Starter"
+def projectName = "transcript"
 
 repositories {
 	jcenter()
+	maven { url "https://oss.sonatype.org/content/repositories/snapshots" }
 }
 
 dependencies {
-	// GUI style
-	implementation 'com.formdev:flatlaf:0.39'
-	
 	// PDF splitting and conversion to image
-	implementation 'org.apache.pdfbox:jbig2-imageio:3.0.3'
-	implementation 'org.apache.pdfbox:pdfbox-tools:2.0.22'
-	implementation 'org.apache.pdfbox:pdfbox:2.0.22'
+	implementation "org.apache.pdfbox:jbig2-imageio:3.0.3"
+	implementation "org.apache.pdfbox:pdfbox-tools:2.0.22"
+	implementation "org.apache.pdfbox:pdfbox:2.0.22"
 
 	// OCR
-    implementation 'org.bytedeco:tesseract-platform:4.1.1-1.5.4'
+    // implementation "org.bytedeco:tesseract-platform:4.1.1-1.5.4"
+    implementation "org.bytedeco:tesseract-platform:4.1.1-1.5.5-SNAPSHOT"
 
 	// Word file generation
-	implementation 'org.docx4j:docx4j:3.3.5'
-	implementation 'javax.xml.bind:jaxb-api:2.1'
-	implementation 'com.sun.xml.bind:jaxb-impl:2.1.2'
+	implementation "org.docx4j:docx4j:3.3.5"
+	implementation "javax.xml.bind:jaxb-api:2.1"
+	implementation "com.sun.xml.bind:jaxb-impl:2.1.2"
+
+	// JavaFX
+	runtimeOnly "org.openjfx:javafx-base:15.0.1:linux"
+	runtimeOnly "org.openjfx:javafx-graphics:15.0.1:linux"
+	runtimeOnly "org.openjfx:javafx-controls:15.0.1:linux"
+	runtimeOnly "org.openjfx:javafx-fxml:15.0.1:linux"
+	runtimeOnly "org.openjfx:javafx-media:15.0.1:linux"
+
+	runtimeOnly "org.openjfx:javafx-base:15.0.1:win"
+	runtimeOnly "org.openjfx:javafx-graphics:15.0.1:win"
+	runtimeOnly "org.openjfx:javafx-controls:15.0.1:win"
+	runtimeOnly "org.openjfx:javafx-fxml:15.0.1:win"
+	runtimeOnly "org.openjfx:javafx-media:15.0.1:win"
+
+	runtimeOnly "org.openjfx:javafx-base:15.0.1:mac"
+	runtimeOnly "org.openjfx:javafx-graphics:15.0.1:mac"
+	runtimeOnly "org.openjfx:javafx-controls:15.0.1:mac"
+	runtimeOnly "org.openjfx:javafx-fxml:15.0.1:mac"
+	runtimeOnly "org.openjfx:javafx-media:15.0.1:mac"
+}
+
+javafx {
+	modules = [ "javafx.controls", "javafx.fxml" ]
+	version = "15.0.1"
 }
 
 application {
 	mainClass.set(mainClassFQN)
 }
 
+compileJava {
+    options.warnings = true
+    options.deprecation = true
+    options.compilerArgs += ["-Xlint:all"]
+}
+
 task fatJar(type: Jar) {
 	manifest {
-		attributes 'Main-Class': mainClassFQN
-		attributes 'Description': projectName
+		attributes "Main-Class": mainClassFQN
+		attributes "Description": projectName
 	}
 	archiveBaseName = projectName
 	duplicatesStrategy = DuplicatesStrategy.INCLUDE
@@ -51,9 +81,9 @@ task fatJar(type: Jar) {
 	with jar
 
 	exclude(
-		'META-INF/*.DSA',
-		'META-INF/*.SF',
-		'META-INF/*.RSA'
+		"META-INF/*.DSA",
+		"META-INF/*.SF",
+		"META-INF/*.RSA"
 	)
 	with jar
 }
