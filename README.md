@@ -1,7 +1,7 @@
 # Transcript
 
 This is a simple OCR application for scanned PDF's. It uses the
-[Tesseract](/home/gnagy/dev/gnagy/sand/210204_2250_ocr2/ocr_tesseract_java_dev.md)
+[Tesseract](https://github.com/bytedeco/javacpp-presets/tree/master/tesseract)
 library's Java port for the OCR. [PDFBox](https://pdfbox.apache.org/) is used
 for splitting the PDF to pages and then save the pages as images and the result
 is saved as DOCX using [docx4j](https://www.docx4java.org/trac/docx4j).
