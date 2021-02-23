@@ -1,6 +1,13 @@
 package com.h119.transcript;
 
+import java.awt.geom.AffineTransform;
+import java.awt.image.AffineTransformOp;
+import java.awt.image.BufferedImage;
+import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
+
+import javax.imageio.ImageIO;
 
 import javafx.event.ActionEvent;
 import javafx.geometry.Insets;
@@ -33,6 +40,8 @@ class ImageProcessingWindow {
 	private Button jumpButton;
 	private Button leftJump;
 	private Button rightJump;
+	private Button rotateClockWise;
+	private Button rotateCounterClockWise;
 
 	private final static int MARGIN = 10;
 
@@ -77,6 +86,11 @@ class ImageProcessingWindow {
         Button closeButton = new Button("Close");
         closeButton.setOnAction(e -> window.close());
 
+		rotateClockWise = new Button("CW");
+		rotateClockWise.setOnAction(this::rotate);
+		rotateCounterClockWise = new Button("CCW");
+		rotateCounterClockWise.setOnAction(this::rotate);
+
 		var leftSpacer = new Region();
 		var rightSpacer = new Region();
 
@@ -99,17 +113,32 @@ class ImageProcessingWindow {
 		var scrollPane = new ScrollPane();
 		scrollPane.setContent(currentImage);
 
+		var rotationControl = new HBox();
+		rotationControl.getChildren().addAll(
+			rotateCounterClockWise,
+			rotateClockWise
+		);
+		rotationControl.setAlignment(Pos.CENTER);
+		rotationControl.setSpacing(MARGIN);
+		rotationControl.setPadding(new Insets(MARGIN, MARGIN, MARGIN, MARGIN));
+
         var layout = new VBox();
-        layout.getChildren().addAll
-		(
+        layout.getChildren().addAll(
 			imagePath,
 			jumpControlBox,
 			scrollPane,
+			rotationControl,
 			closeButton
 		);
         layout.setAlignment(Pos.CENTER);
 		layout.setSpacing(MARGIN);
 		layout.setPadding(new Insets(MARGIN, MARGIN, MARGIN, MARGIN));
+
+		VBox.setVgrow(imagePath, Priority.NEVER);
+		VBox.setVgrow(jumpControlBox, Priority.NEVER);
+		VBox.setVgrow(scrollPane, Priority.ALWAYS);
+		VBox.setVgrow(rotationControl, Priority.NEVER);
+		VBox.setVgrow(closeButton, Priority.NEVER);
 
         Scene scene = new Scene(layout);
 
@@ -169,6 +198,33 @@ class ImageProcessingWindow {
 		}
 		catch (NumberFormatException nfe) {
 		}
+	}
 
+	private void rotate(ActionEvent e) {
+		try {
+			int angle = e.getSource() == rotateClockWise ? 90 : -90;
+			String imageFileName = imageFiles.get(currentImageIndex);
+
+			BufferedImage image = ImageIO.read(new File(imageFileName));
+			final double rads = Math.toRadians(angle);
+			final double sin = Math.abs(Math.sin(rads));
+			final double cos = Math.abs(Math.cos(rads));
+			final int w = (int) Math.floor(image.getWidth() * cos + image.getHeight() * sin);
+			final int h = (int) Math.floor(image.getHeight() * cos + image.getWidth() * sin);
+			final var rotatedImage = new BufferedImage(w, h, image.getType());
+			final var at = new AffineTransform();
+			at.translate(w / 2, h / 2);
+			at.rotate(rads, 0, 0);
+			at.translate(-image.getWidth() / 2, -image.getHeight() / 2);
+			final var rotateOp = new AffineTransformOp(at, AffineTransformOp.TYPE_BILINEAR);
+			rotateOp.filter(image,rotatedImage);
+			ImageIO.write(rotatedImage, "PNG", new File(imageFileName));
+
+			setupImage(imageFileName);
+		}
+		catch (IOException ioe) {
+			System.err.format("Exception thrown while trying to rotate image: %s\n", ioe);
+			ioe.printStackTrace(System.err);
+		}
 	}
 }
