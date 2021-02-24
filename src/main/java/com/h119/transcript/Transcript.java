@@ -32,6 +32,7 @@ import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
+import javafx.scene.control.CheckBox;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.ProgressBar;
@@ -60,6 +61,7 @@ public class Transcript extends Application {
 	private ProgressBar progressBar;
 	private Button cancelButton;
 	private Button themeButton;
+	private CheckBox showImageProcessingWindow;
 
 	public enum ThemeState {LIGHT, DARK};
 
@@ -112,6 +114,9 @@ public class Transcript extends Application {
 		cancelButton.setOnAction(this::cancelPressed);
 		cancelButton.setDisable(true);
 
+		showImageProcessingWindow = new CheckBox("Show image processing window");
+		showImageProcessingWindow.setSelected(true);
+
 		lightThemeIcon = new ImageView("/lightTheme.png");
 		darkThemeIcon = new ImageView("/darkTheme.png");
 
@@ -127,6 +132,7 @@ public class Transcript extends Application {
 			languageBox,
 			openFileButton,
 			cancelButton,
+			showImageProcessingWindow,
 			spacer,
 			themeButton
 		);
@@ -191,7 +197,7 @@ public class Transcript extends Application {
 			currentTask.stateProperty().addListener(
 				(observableValue, oldValue, newValue) -> {
 					if (newValue == Worker.State.SUCCEEDED) {
-						if (imageFiles.size() > 0) {
+						if (imageFiles.size() > 0 && showImageProcessingWindow.isSelected()) {
 							final var processingWindow = new ImageProcessingWindow(themeState, imageFiles);
 							processingWindow.showAndWait();
 						}

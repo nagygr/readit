@@ -80,3 +80,8 @@ complete.
 When the image files have been created, a dialog window pops up that allows you
 to rotate pages of the document. Make sure that the text is upright on all
 pages, otherwise the OCR algorithm will not be able to recognize it.
+
+If the PDF document document doesn't require any page processing, then the
+checkbox of the image processing window can be unchecked. This will allow the
+entire process to progress without the need of closing the processing window
+between page extraction and the OCR process.
