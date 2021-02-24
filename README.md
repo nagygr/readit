@@ -68,7 +68,9 @@ java -jar <path-to-transcript>/transcript.jar
 ```
 
 or you can simply double click on the JAR file if your system is configured that
-way.
+way. Please note, that the directory called `tessdata` with the training files
+need to reside in the working directory (where the application is started from),
+otherwise it won't find them and will be unable to run.
 
 You need to browse for the PDF file. It will create a PNG image file for every
 page of the document and then a DOCX file with the same name as the original PDF
@@ -76,5 +78,5 @@ file. The image files are kept but can be deleted when the transformation is
 complete.
 
 When the image files have been created, a dialog window pops up that allows you
-to rotate pages of the document. Make sure that the text looks upright on all
+to rotate pages of the document. Make sure that the text is upright on all
 pages, otherwise the OCR algorithm will not be able to recognize it.
