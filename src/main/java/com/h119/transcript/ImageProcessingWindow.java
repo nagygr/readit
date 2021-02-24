@@ -80,7 +80,7 @@ class ImageProcessingWindow {
 		imageIndexField = new TextField(String.format("%d", currentImageIndex + 1));
 
 		jumpButton = new Button("Jump");
-		jumpButton.setOnAction(e -> jumpToNewPage());
+		jumpButton.setOnAction(this::jumpToNewPage);
 
 		leftJump = new Button("<<");
 		leftJump.setOnAction(this::jumpOne);
@@ -185,37 +185,31 @@ class ImageProcessingWindow {
 		currentImage.setSmooth(true);
 	}
 
-	private void jumpToNewPage() {
+	private void jumpToNewPage(ActionEvent e) {
 		try {
-			int newIndex = Integer.parseInt(imageIndexField.getText()) - 1;
-
-			if (newIndex >= 0 && newIndex < imageFiles.size()) {
-				var path = imageFiles.get(newIndex);
-				setupImage(path);
-				currentImageIndex = newIndex;
-			}
+			jumpToIndex(
+				Integer.parseInt(imageIndexField.getText()) - 1
+			);
 		}
 		catch (NumberFormatException nfe) {
+			imageIndexField.setText(String.format("%d", currentImageIndex + 1));
 		}
-
-		imageIndexField.setText(String.format("%d", currentImageIndex + 1));
 	}
 
 	private void jumpOne(ActionEvent e) {
-		try {
-			int currentPage = Integer.parseInt(imageIndexField.getText());
+		jumpToIndex(
+			currentImageIndex + (e.getSource() == leftJump ? -1 : 1)
+		);
+	}
 
-			if (e.getSource() == leftJump) {
-				imageIndexField.setText(String.format("%d", currentPage - 1));
-			}
-			else {
-				imageIndexField.setText(String.format("%d", currentPage + 1));
-			}
+	private void jumpToIndex(int newIndex) {
+		if (newIndex >= 0 && newIndex < imageFiles.size()) {
+			var path = imageFiles.get(newIndex);
+			setupImage(path);
+			currentImageIndex = newIndex;
+		}
 
-			jumpToNewPage();
-		}
-		catch (NumberFormatException nfe) {
-		}
+		imageIndexField.setText(String.format("%d", currentImageIndex + 1));
 	}
 
 	private void rotate(ActionEvent e) {
