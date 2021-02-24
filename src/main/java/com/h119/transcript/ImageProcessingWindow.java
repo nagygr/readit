@@ -4,15 +4,19 @@ import java.awt.geom.AffineTransform;
 import java.awt.image.AffineTransformOp;
 import java.awt.image.BufferedImage;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.ArrayList;
 
 import javax.imageio.ImageIO;
 
+import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.geometry.Rectangle2D;
+import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
@@ -131,6 +135,19 @@ class ImageProcessingWindow {
 		var scrollPane = new ScrollPane();
 		scrollPane.setContent(currentImage);
 
+		/*
+		 * The snippet below is a workaround for a JavaFX bug that makes
+		 * the text in a TextArea blurred on Windows. For details, see:
+		 * https://stackoverflow.com/questions/23728517/blurred-text-in-javafx-textarea
+		 */
+		Platform.runLater(() -> {
+			scrollPane.setCache(false);
+			for (Node n : scrollPane.getChildrenUnmodifiable()) {
+				n.setCache(false);
+			}
+		});
+		/* -- END OF WORKAROUND CODE SNIPPET -- */
+
 		var rotationControl = new HBox();
 		rotationControl.getChildren().addAll(
 			rotateCounterClockWise,
@@ -171,18 +188,23 @@ class ImageProcessingWindow {
 	}
 
 	private void setupImage(String imageFile) {
-		var image = new Image("file://" + imageFile);
+		try {
+			var image = new Image(new FileInputStream(imageFile));
 
-		imagePath.setText(imageFile);
-		currentImage.setImage(image);
+			imagePath.setText(imageFile);
+			currentImage.setImage(image);
 
-		if (image.getWidth() > image.getHeight())
-			currentImage.setFitWidth(imageWidth);
-		else
-			currentImage.setFitHeight(imageHeight);
+			if (image.getWidth() > image.getHeight())
+				currentImage.setFitWidth(imageWidth);
+			else
+				currentImage.setFitHeight(imageHeight);
 
-		currentImage.setPreserveRatio(true);
-		currentImage.setSmooth(true);
+			currentImage.setPreserveRatio(true);
+			currentImage.setSmooth(true);
+		}
+		catch (FileNotFoundException exception) {
+			System.err.format("Error loading file: %s\n", exception);
+		}
 	}
 
 	private void jumpToNewPage(ActionEvent e) {
