@@ -54,7 +54,7 @@ The following steps are needed:
 
 OR
 
-1.	create a directory called `tessdata`
+1.	create a directory called `tessdata` in the project root (`transcript`)
 2.	download the contents of the repository above (or just the `tessdata` files
 	of the languages that you would like to work with) and place the `traineddata`
 	files for the required languages in `tessdata`
