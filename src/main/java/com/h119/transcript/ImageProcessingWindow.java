@@ -42,6 +42,10 @@ class ImageProcessingWindow {
 	private Button rightJump;
 	private Button rotateClockWise;
 	private Button rotateCounterClockWise;
+	private ImageView rotateClockWiseIconLight;
+	private ImageView rotateClockWiseIconDark;
+	private ImageView rotateCounterClockWiseIconLight;
+	private ImageView rotateCounterClockWiseIconDark;
 
 	private final static int MARGIN = 10;
 
@@ -86,10 +90,24 @@ class ImageProcessingWindow {
         Button closeButton = new Button("Close");
         closeButton.setOnAction(e -> window.close());
 
-		rotateClockWise = new Button("CW");
+		rotateClockWiseIconLight = new ImageView("/CWLight.png");
+		rotateClockWiseIconDark = new ImageView("/CWDark.png");
+		rotateCounterClockWiseIconLight = new ImageView("/CCWLight.png");
+		rotateCounterClockWiseIconDark = new ImageView("/CCWDark.png");
+
+		rotateClockWise = new Button();
 		rotateClockWise.setOnAction(this::rotate);
-		rotateCounterClockWise = new Button("CCW");
+		rotateCounterClockWise = new Button();
 		rotateCounterClockWise.setOnAction(this::rotate);
+
+		if (themeState == Transcript.ThemeState.DARK) {
+			rotateClockWise.setGraphic(rotateClockWiseIconDark);
+			rotateCounterClockWise.setGraphic(rotateCounterClockWiseIconDark);
+		}
+		else {
+			rotateClockWise.setGraphic(rotateClockWiseIconLight);
+			rotateCounterClockWise.setGraphic(rotateCounterClockWiseIconLight);
+		}
 
 		var leftSpacer = new Region();
 		var rightSpacer = new Region();
