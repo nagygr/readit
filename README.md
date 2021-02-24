@@ -32,10 +32,10 @@ gradle fatJar
 
 The JAR file will be created under `build/libs` and the name is `transcript.jar`.
 
-The JAR contains one library (the Tesseract binding) that is not pure Java, but
-it contains the binaries for both Windows and Linux so the application can be
-used on these platforms. It possibly works on Mac as well, but this hasn't been
-tested.
+The JAR contains some libraries (the Tesseract binding and the JavaFX
+libraries) that are not pure Java, but it contains the binaries for both
+Windows and Linux so the application can be used on these platforms. It
+possibly works on Mac as well, but this hasn't been tested.
 
 ### The training data
 
