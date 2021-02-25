@@ -137,7 +137,7 @@ class ImageProcessingWindow {
 
 		/*
 		 * The snippet below is a workaround for a JavaFX bug that makes
-		 * the text in a TextArea blurred on Windows. For details, see:
+		 * the content within a ScrollPane blurred on Windows. For details, see:
 		 * https://stackoverflow.com/questions/23728517/blurred-text-in-javafx-textarea
 		 */
 		Platform.runLater(() -> {
