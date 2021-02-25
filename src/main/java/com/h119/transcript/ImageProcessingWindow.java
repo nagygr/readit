@@ -53,7 +53,7 @@ class ImageProcessingWindow {
 
 	private final static int MARGIN = 10;
 
-    private static final Rectangle2D screenBounds;
+	private static final Rectangle2D screenBounds;
 	private static final double imageHeight;
 	private static final double imageWidth;
 
@@ -71,10 +71,10 @@ class ImageProcessingWindow {
 
 		window = new Stage();
 
-        window.initModality(Modality.APPLICATION_MODAL);
-        window.setTitle("Image processing");
+		window.initModality(Modality.APPLICATION_MODAL);
+		window.setTitle("Image processing");
 
-        imagePath = new Label();
+		imagePath = new Label();
 		currentImage = new ImageView();
 
 		var imageFile = imageFiles.get(currentImageIndex);
@@ -91,8 +91,8 @@ class ImageProcessingWindow {
 		rightJump = new Button(">>");
 		rightJump.setOnAction(this::jumpOne);
 
-        Button closeButton = new Button("Close");
-        closeButton.setOnAction(e -> window.close());
+		Button closeButton = new Button("Close");
+		closeButton.setOnAction(e -> window.close());
 
 		rotateClockWiseIconLight = new ImageView("/CWLight.png");
 		rotateClockWiseIconDark = new ImageView("/CWDark.png");
@@ -125,7 +125,7 @@ class ImageProcessingWindow {
 			rightSpacer,
 			rightJump
 		);
-        jumpControlBox.setAlignment(Pos.CENTER);
+		jumpControlBox.setAlignment(Pos.CENTER);
 		jumpControlBox.setSpacing(MARGIN);
 		jumpControlBox.setPadding(new Insets(MARGIN, MARGIN, MARGIN, MARGIN));
 
@@ -157,15 +157,15 @@ class ImageProcessingWindow {
 		rotationControl.setSpacing(MARGIN);
 		rotationControl.setPadding(new Insets(MARGIN, MARGIN, MARGIN, MARGIN));
 
-        var layout = new VBox();
-        layout.getChildren().addAll(
+		var layout = new VBox();
+		layout.getChildren().addAll(
 			imagePath,
 			jumpControlBox,
 			scrollPane,
 			rotationControl,
 			closeButton
 		);
-        layout.setAlignment(Pos.CENTER);
+		layout.setAlignment(Pos.CENTER);
 		layout.setSpacing(MARGIN);
 		layout.setPadding(new Insets(MARGIN, MARGIN, MARGIN, MARGIN));
 
@@ -175,7 +175,7 @@ class ImageProcessingWindow {
 		VBox.setVgrow(rotationControl, Priority.NEVER);
 		VBox.setVgrow(closeButton, Priority.NEVER);
 
-        Scene scene = new Scene(layout);
+		Scene scene = new Scene(layout);
 
 		if (themeState == Transcript.ThemeState.DARK)
 			scene.getStylesheets().add("/modena-dark.css");
@@ -184,7 +184,7 @@ class ImageProcessingWindow {
 	}
 
 	public void showAndWait() {
-        window.showAndWait();
+		window.showAndWait();
 	}
 
 	private void setupImage(String imageFile) {
