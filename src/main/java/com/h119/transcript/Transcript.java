@@ -4,8 +4,10 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -282,9 +284,27 @@ public class Transcript extends Application {
 					.sorted(Comparator.comparing(Language::getName))
 					.collect(Collectors.toList());
 		}
-		catch (Exception e) {
-			throw new RuntimeException(e);
+		catch (IOException exception) {
+			showMissingTrainedDataAlert();
 		}
+
+		Platform.exit();
+
+		// This is needed to avoid compile error. Execution will never get here.
+		return List.<Language>of();
+	}
+
+	public static void showMissingTrainedDataAlert() {
+		var alert = new Alert(AlertType.ERROR);
+
+		alert.setContentText(
+			"The tessdata directory couldn't be found. Please create it in the "  +
+			"working directory and place the \".traineddata\" language files for the " +
+			"required languages there. Language files can be downloaded from: " +
+			"https://github.com/tesseract-ocr/tessdata."
+		);
+
+		alert.showAndWait();
 	}
 
 	public static void bootstrap(String[] args) {

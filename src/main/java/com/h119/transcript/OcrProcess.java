@@ -64,8 +64,11 @@ class OcrProcess extends Task<Void> {
 			BytePointer outText;
 
 			TessBaseAPI api = new TessBaseAPI();
-			if (api.Init("tessdata", languageCode) != 0) {
-				throw new RuntimeException("Could not initialize tesseract.");
+			int errorCode = api.Init("tessdata", languageCode);
+			if (errorCode != 0) {
+				throw new RuntimeException(
+					String.format("Could not initialize tesseract -- error code: %d", errorCode)
+				);
 			}
 
 			Platform.runLater(() -> {textArea.appendText("Successfully initialized tesseract\n");});
