@@ -280,7 +280,17 @@ public class Transcript extends Application {
 					.filter(name -> name.endsWith(".traineddata"))
 					.filter(name -> name.indexOf("_") == -1)
 					.map(name -> name.substring(0,3))
-					.map(name -> LanguageCodes.ofAlpha3(name).orElseThrow())
+					.map(
+						name -> LanguageCodes
+								.ofAlpha3(name)
+								.orElse(
+									new Language(
+										String.format("<unknown (%s)>", name),
+										name,
+										"<na>"
+									)
+								)
+					)
 					.sorted(Comparator.comparing(Language::getName))
 					.collect(Collectors.toList());
 		}
