@@ -290,14 +290,14 @@ public class Transcript extends Application {
 			return
 				Files.list(Paths.get("tessdata"))
 					.filter(file -> !Files.isDirectory(file))
-					.map(Path::getFileName)
-					.map(Path::toString)
-					.filter(name -> name.endsWith(".traineddata"))
-					.filter(name -> name.indexOf("_") == -1)
-					.map(name -> name.substring(0,3))
+					.map(path -> path.getFileName().toString())
+					.filter(
+						name ->
+							name.endsWith(".traineddata") && name.indexOf("_") == -1
+					)
 					.map(
 						name -> LanguageCodes
-								.ofAlpha3(name)
+								.ofAlpha3(name.substring(0,3))
 								.orElse(
 									new Language(
 										String.format("<unknown (%s)>", name),
