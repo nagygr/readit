@@ -11,7 +11,7 @@ def mainClassFQN = "com.h119.transcript.Starter"
 def projectName = "transcript"
 
 repositories {
-	jcenter()
+	mavenCentral()
 	maven { url "https://oss.sonatype.org/content/repositories/snapshots" }
 }
 
@@ -22,8 +22,7 @@ dependencies {
 	implementation "org.apache.pdfbox:pdfbox:2.0.22"
 
 	// OCR
-    // implementation "org.bytedeco:tesseract-platform:4.1.1-1.5.4"
-    implementation "org.bytedeco:tesseract-platform:4.1.1-1.5.5-SNAPSHOT"
+    implementation "org.bytedeco:tesseract-platform:4.1.1-1.5.5"
 
 	// Word file generation
 	implementation "org.docx4j:docx4j:3.3.5"
