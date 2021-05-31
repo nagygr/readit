@@ -2,7 +2,6 @@ package com.h119.transcript;
 
 import java.awt.image.BufferedImage;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -223,6 +222,11 @@ public class Transcript extends Application {
 
 			new Thread(currentTask).start();
 		}
+		catch (FileOperationCancelledException foce) {
+			textArea.appendText(
+				String.format("%s\n", foce.getMessage())
+			);
+		}
 		catch (Exception exception) {
 			textArea.appendText(
 				String.format("Error: %s\n", exception)
@@ -253,7 +257,18 @@ public class Transcript extends Application {
 		}
 	}
 
-	private File getFile(Stage parent) throws FileNotFoundException {
+	/*
+	 * This class is not meant to be serialized and thus
+	 * serialVersionUID is not defined.
+	 */
+	@SuppressWarnings("serial")
+	public class FileOperationCancelledException extends Exception {
+		public FileOperationCancelledException() {
+			super("The open file operation has been cancelled.");
+		}
+	}
+
+	private File getFile(Stage parent) throws FileOperationCancelledException {
 		FileChooser fileChooser = new FileChooser();
 		fileChooser.setTitle("Open PDF File");
 		fileChooser
@@ -265,7 +280,7 @@ public class Transcript extends Application {
 		File selectedFile = fileChooser.showOpenDialog(parent);
 
 		if (selectedFile == null)
-			throw new FileNotFoundException();
+			throw new FileOperationCancelledException();
 
 		return selectedFile;
 	}
@@ -275,12 +290,22 @@ public class Transcript extends Application {
 			return
 				Files.list(Paths.get("tessdata"))
 					.filter(file -> !Files.isDirectory(file))
-					.map(Path::getFileName)
-					.map(Path::toString)
-					.filter(name -> name.endsWith(".traineddata"))
-					.filter(name -> name.indexOf("_") == -1)
-					.map(name -> name.substring(0,3))
-					.map(name -> LanguageCodes.ofAlpha3(name).orElseThrow())
+					.map(path -> path.getFileName().toString())
+					.filter(
+						name ->
+							name.endsWith(".traineddata") && name.indexOf("_") == -1
+					)
+					.map(
+						name -> LanguageCodes
+								.ofAlpha3(name.substring(0,3))
+								.orElse(
+									new Language(
+										String.format("<unknown (%s)>", name),
+										name,
+										"<na>"
+									)
+								)
+					)
 					.sorted(Comparator.comparing(Language::getName))
 					.collect(Collectors.toList());
 		}
