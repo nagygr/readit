@@ -1,10 +1,11 @@
 # Transcript
 
 This is a simple OCR application for scanned PDF's. It uses the
-[Tesseract](https://github.com/bytedeco/javacpp-presets/tree/master/tesseract)
-library's Java port for the OCR. [PDFBox](https://pdfbox.apache.org/) is used
-for splitting the PDF to pages and then saving the pages as images and the result
-is saved as DOCX using [docx4j](https://www.docx4java.org/trac/docx4j).
+[Tesseract](https://github.com/tesseract-ocr/tesseract) library's [Java
+port](https://github.com/bytedeco/javacpp-presets/tree/master/tesseract) for
+the OCR. [PDFBox](https://pdfbox.apache.org/) is used for splitting the PDF to
+pages and then saving the pages as images and the result is saved as DOCX using
+[docx4j](https://www.docx4java.org/trac/docx4j).
 
 ## Installation
 
@@ -30,7 +31,7 @@ A self-standing, so called "fat jar" can be created by issuing:
 gradle fatJar
 ```
 
-The JAR file will be created under `build/libs` and the name is `transcript.jar`.
+The JAR file will be created here: `build/libs/transcript.jar`.
 
 The JAR contains some libraries (the Tesseract binding and the JavaFX
 libraries) that are not pure Java, but it contains the binaries for both
@@ -69,7 +70,7 @@ java -jar <path-to-transcript>/transcript.jar
 
 or you can simply double click on the JAR file if your system is configured that
 way. Please note, that the directory called `tessdata` with the training files
-need to reside in the working directory (where the application is started from),
+needs to reside in the working directory (where the application is started from),
 otherwise it won't find them and will be unable to run.
 
 You need to browse for the PDF file. It will create a PNG image file for every
