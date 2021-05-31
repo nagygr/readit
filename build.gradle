@@ -12,7 +12,6 @@ def projectName = "transcript"
 
 repositories {
 	mavenCentral()
-	maven { url "https://oss.sonatype.org/content/repositories/snapshots" }
 }
 
 dependencies {
@@ -22,7 +21,7 @@ dependencies {
 	implementation "org.apache.pdfbox:pdfbox:2.0.22"
 
 	// OCR
-    implementation "org.bytedeco:tesseract-platform:4.1.1-1.5.5"
+	implementation "org.bytedeco:tesseract-platform:4.1.1-1.5.5"
 
 	// Word file generation
 	implementation "org.docx4j:docx4j:3.3.5"
@@ -59,9 +58,9 @@ application {
 }
 
 compileJava {
-    options.warnings = true
-    options.deprecation = true
-    options.compilerArgs += ["-Xlint:all"]
+	options.warnings = true
+	options.deprecation = true
+	options.compilerArgs += ["-Xlint:all"]
 }
 
 task fatJar(type: Jar) {
