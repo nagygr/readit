@@ -137,8 +137,9 @@ class OcrProcess extends Task<Void> {
 				);
 			});
 		}
-		catch (Exception e) {
+		catch (Throwable e) {
 			Platform.runLater(() -> {textArea.appendText(String.format("Error: %s\n", e));});
+			e.printStackTrace();
 		}
 
 		return null;
