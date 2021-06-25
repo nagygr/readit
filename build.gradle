@@ -24,9 +24,8 @@ dependencies {
 	implementation "org.bytedeco:tesseract-platform:4.1.1-1.5.5"
 
 	// Word file generation
-	implementation "org.docx4j:docx4j:3.3.5"
-	implementation "javax.xml.bind:jaxb-api:2.1"
-	implementation "com.sun.xml.bind:jaxb-impl:2.1.2"
+	implementation "org.docx4j:docx4j-core:11.2.9"
+	implementation "org.docx4j:docx4j-JAXB-ReferenceImpl:11.2.9"
 
 	// JavaFX
 	runtimeOnly "org.openjfx:javafx-base:15.0.1:linux"
